@@ -65,6 +65,12 @@ const PALETTE: CategoryColorSet[] = [
   },
 ]
 
+/** Fixed colors for the default categories, requested explicitly rather than left to the hash. */
+const OVERRIDES: Record<string, CategoryColorSet> = {
+  Utama: PALETTE[2], // emerald
+  Bercuti: PALETTE[1], // purple
+}
+
 function hash(str: string): number {
   let h = 0
   for (let i = 0; i < str.length; i++) {
@@ -76,5 +82,5 @@ function hash(str: string): number {
 
 /** Deterministic color set per category name — same category always gets the same color. */
 export function categoryColor(name: string): CategoryColorSet {
-  return PALETTE[hash(name) % PALETTE.length]
+  return OVERRIDES[name] ?? PALETTE[hash(name) % PALETTE.length]
 }
