@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { CalendarClock, CheckSquare, ChevronRight, Settings, ShoppingCart } from 'lucide-react'
+import { CalendarClock, CheckSquare, Moon, Settings, ShoppingCart, Sun } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { useGroceries } from '../hooks/useGroceries'
 import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
-import { Avatar } from '../components/Avatar'
 import { MemoBoard } from '../components/MemoBoard'
 import { countdownLabel, dateBadgeClass, relativeTime } from '../utils/date'
 import type { ActivityType } from '../types'
@@ -23,7 +23,8 @@ const activityVerb: Record<ActivityType, TranslationKey> = {
 }
 
 export function Dashboard() {
-  const { config, displayName } = useAuth()
+  const { displayName } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const { language, t } = useLanguage()
   const navigate = useNavigate()
   const { dates } = useImportantDates()
@@ -67,30 +68,27 @@ export function Dashboard() {
               {t('homeTitle')}
             </h1>
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-            aria-label={t('settingsTitle')}
-          >
-            <Settings className="h-4 w-4" strokeWidth={1.75} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+              aria-label={t('toggleTheme')}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" strokeWidth={1.75} />
+              ) : (
+                <Moon className="h-4 w-4" strokeWidth={1.75} />
+              )}
+            </button>
+            <button
+              onClick={() => navigate('/settings')}
+              className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+              aria-label={t('settingsTitle')}
+            >
+              <Settings className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
-
-        {config && (
-          <button
-            onClick={() => navigate('/settings')}
-            className="press mt-4 flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left dark:border-neutral-800 dark:bg-neutral-900"
-          >
-            <div className="flex -space-x-2">
-              <Avatar name={config.khaiName || '?'} size="sm" />
-              <Avatar name={config.wifeName || '?'} size="sm" />
-            </div>
-            <p className="min-w-0 flex-1 truncate text-[13px] text-neutral-500 dark:text-neutral-400">
-              {config.khaiName || 'Khai'} &amp; {config.wifeName || 'Wife'}
-            </p>
-            <ChevronRight className="h-4 w-4 shrink-0 text-neutral-300 dark:text-neutral-600" strokeWidth={1.75} />
-          </button>
-        )}
       </header>
 
       <main className="animate-fade-in-up space-y-5 px-5 pt-1">
