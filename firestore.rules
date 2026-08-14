@@ -3,7 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isHousehold() {
       return request.auth != null &&
-        (request.auth.uid == "KHAI_UID" || request.auth.uid == "WIFE_UID");
+        exists(/databases/$(database)/documents/household/config) &&
+        (request.auth.uid == get(/databases/$(database)/documents/household/config).data.khaiUid ||
+         request.auth.uid == get(/databases/$(database)/documents/household/config).data.wifeUid);
     }
     match /{document=**} {
       allow read, write: if isHousehold();

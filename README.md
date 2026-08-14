@@ -44,8 +44,9 @@ Tabs: **Dashboard**, **Tarikh Penting** (important dates), **Senarai Runcit**
 
 ### 3. Bootstrap the 2 accounts (one-time)
 
-Firestore rules lock everything to exactly 2 whitelisted UIDs — but you don't
-know those UIDs until the accounts exist. So bootstrap in two phases:
+`firestore.rules` locks every collection to whoever's UID is stored in the
+`household/config` doc — but that doc doesn't exist until someone signs up.
+So bootstrap in two phases:
 
 1. **Deploy the temporary setup rules** (only lets a signed-in user read/write
    the single `household/config` doc, nothing else):
@@ -63,13 +64,9 @@ know those UIDs until the accounts exist. So bootstrap in two phases:
    choosing "Khai" or "Wife". Log out, sign up the second account with the
    other role. After both exist, the signup route auto-redirects to login.
 
-3. Grab both UIDs from Firebase console → Authentication → Users.
-
-4. Open `firestore.rules` and replace `KHAI_UID` / `WIFE_UID` with the real
-   UIDs.
-
-5. Deploy the real rules (make sure `firebase.json` points at
-   `firestore.rules`, the default):
+3. **Deploy the real rules** (make sure `firebase.json` points at
+   `firestore.rules`, the default — no editing needed, it reads the
+   whitelist straight from `household/config`):
 
    ```bash
    firebase deploy --only firestore:rules --project <your-project-id>
