@@ -4,17 +4,12 @@ import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
+import { CategoryPicker } from '../components/CategoryPicker'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { countdownLabel, daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import type { ImportantDate } from '../types'
-
-const categoryLabel: Record<ImportantDate['category'], string> = {
-  bil: 'Bil',
-  anniversary: 'Anniversary',
-  lain: 'Lain',
-}
 
 const repeatLabel: Record<ImportantDate['repeat'], string> = {
   none: 'Sekali sahaja',
@@ -30,12 +25,12 @@ function badgeClass(dateMs: number): string {
 }
 
 export function ImportantDatesPage() {
-  const { user } = useAuth()
+  const { user, dateCategories, addDateCategory } = useAuth()
   const { dates, loading, addDate, removeDate } = useImportantDates()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(toDateInputValue(Date.now()))
-  const [category, setCategory] = useState<ImportantDate['category']>('lain')
+  const [category, setCategory] = useState(dateCategories[0])
   const [repeat, setRepeat] = useState<ImportantDate['repeat']>('none')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -43,7 +38,7 @@ export function ImportantDatesPage() {
   function resetForm() {
     setTitle('')
     setDate(toDateInputValue(Date.now()))
-    setCategory('lain')
+    setCategory(dateCategories[0])
     setRepeat('none')
     setNotes('')
   }
@@ -87,7 +82,7 @@ export function ImportantDatesPage() {
         <EmptyState
           icon={CalendarClock}
           title="Takde tarikh lagi, tambah satu"
-          subtitle="Bil, anniversary, atau apa-apa tarikh penting"
+          subtitle="Appointment, bercuti, anniversary, atau apa-apa tarikh penting"
         />
       )}
 
@@ -101,7 +96,7 @@ export function ImportantDatesPage() {
             <div className="min-w-0">
               <p className="truncate text-[15px] font-medium text-neutral-900">{d.title}</p>
               <p className="mt-0.5 text-sm text-neutral-400">
-                {formatDate(d.date)} · {categoryLabel[d.category]}
+                {formatDate(d.date)} · {d.category}
                 {d.repeat !== 'none' && ` · ${repeatLabel[d.repeat]}`}
               </p>
               {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}
@@ -149,18 +144,12 @@ export function ImportantDatesPage() {
           </div>
           <div>
             <label className={labelClass}>Kategori</label>
-            <div className="flex gap-2">
-              {(['bil', 'anniversary', 'lain'] as const).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={segmentClass(category === c)}
-                  onClick={() => setCategory(c)}
-                >
-                  {categoryLabel[c]}
-                </button>
-              ))}
-            </div>
+            <CategoryPicker
+              categories={dateCategories}
+              value={category}
+              onChange={setCategory}
+              onAddCategory={addDateCategory}
+            />
           </div>
           <div>
             <label className={labelClass}>Ulangan</label>

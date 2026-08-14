@@ -1,10 +1,12 @@
 export type Person = 'khai' | 'wife' | 'both'
 
+export const DEFAULT_DATE_CATEGORIES = ['Utama', 'Appointment', 'Bercuti', 'Anniversary']
+
 export interface ImportantDate {
   id: string
   title: string
   date: number // epoch ms
-  category: 'bil' | 'anniversary' | 'lain'
+  category: string
   repeat: 'none' | 'monthly' | 'yearly'
   notes?: string
   createdBy: string
@@ -38,4 +40,5 @@ export interface HouseholdConfig {
   wifeName: string
   khaiUid: string
   wifeUid: string
+  dateCategories?: string[]
 }

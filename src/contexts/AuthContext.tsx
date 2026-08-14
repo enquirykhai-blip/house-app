@@ -12,9 +12,9 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { arrayUnion, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
-import type { HouseholdConfig } from '../types'
+import { DEFAULT_DATE_CATEGORIES, type HouseholdConfig } from '../types'
 
 interface AuthContextValue {
   user: User | null
@@ -24,6 +24,7 @@ interface AuthContextValue {
   role: 'khai' | 'wife' | null
   displayName: string | null
   signupOpen: boolean
+  dateCategories: string[]
   login: (email: string, password: string) => Promise<void>
   signup: (
     email: string,
@@ -32,6 +33,7 @@ interface AuthContextValue {
     name: string,
   ) => Promise<void>
   logout: () => Promise<void>
+  addDateCategory: (name: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -101,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth)
   }
 
+  async function addDateCategory(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const ref = doc(db, 'household', 'config')
+    await updateDoc(ref, { dateCategories: arrayUnion(trimmed) })
+  }
+
   const role: 'khai' | 'wife' | null =
     user && config
       ? user.uid === config.khaiUid
@@ -112,6 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const displayName = role && config ? (role === 'khai' ? config.khaiName : config.wifeName) : null
 
+  const dateCategories =
+    config?.dateCategories && config.dateCategories.length > 0
+      ? config.dateCategories
+      : DEFAULT_DATE_CATEGORIES
+
   return (
     <AuthContext.Provider
       value={{
@@ -122,9 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         displayName,
         signupOpen,
+        dateCategories,
         login,
         signup,
         logout,
+        addDateCategory,
       }}
     >
       {children}

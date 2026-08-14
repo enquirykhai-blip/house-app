@@ -12,12 +12,14 @@
   html {
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
+    touch-action: manipulation;
   }
 
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
+    touch-action: manipulation;
   }
 
   input,

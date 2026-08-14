@@ -10,3 +10,8 @@ export const segmentClass = (active: boolean) =>
   `press flex-1 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors duration-150 ${
     active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500'
   }`
+
+export const chipClass = (active: boolean) =>
+  `press rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors duration-150 ${
+    active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-500'
+  }`
