@@ -1,0 +1,14 @@
+// TEMPORARY rules — use ONLY during first-time setup (before both accounts exist).
+// Deploy this first so the two signups can create household/config, then
+// switch to firestore.rules (with your real UIDs) once both accounts exist.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /household/config {
+      allow read, write: if request.auth != null;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
