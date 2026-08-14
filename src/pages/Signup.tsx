@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { Home } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { SplashScreen } from '../components/SplashScreen'
+import { PasswordInput } from '../components/PasswordInput'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import type { Person } from '../types'
 
@@ -38,7 +39,7 @@ export function Signup() {
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-6">
-      <div className="mx-auto w-full max-w-sm">
+      <div className="animate-fade-in-up safe-top mx-auto w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900">
             <Home className="h-7 w-7 text-white" strokeWidth={1.75} />
@@ -79,6 +80,7 @@ export function Signup() {
             <input
               type="text"
               required
+              autoFocus={khaiTaken || wifeTaken}
               className={inputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -99,21 +101,18 @@ export function Signup() {
           </div>
           <div>
             <label className={labelClass}>Kata laluan</label>
-            <input
-              type="password"
-              required
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
               minLength={6}
               autoComplete="new-password"
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="Sekurang-kurangnya 6 aksara"
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="animate-fade-in-up text-sm text-danger">{error}</p>}
           <button
             type="submit"
-            disabled={submitting || !availableRole || !name.trim()}
+            disabled={submitting || !availableRole || !name.trim() || !email || password.length < 6}
             className={primaryButtonClass}
           >
             {submitting ? 'Mendaftar...' : 'Daftar'}

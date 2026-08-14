@@ -3,10 +3,12 @@ import { CheckSquare, Plus, Trash2 } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
+import { ListSkeleton } from '../components/Skeleton'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useTasks } from '../hooks/useTasks'
-import { formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
+import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
+import { tick } from '../utils/haptics'
 import type { Person, Task } from '../types'
 
 type Filter = 'all' | 'khai' | 'wife'
@@ -60,7 +62,7 @@ export function TasksPage() {
       action={
         <button
           onClick={() => setOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-white"
+          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20"
           aria-label="Tambah tugasan"
         >
           <Plus className="h-5 w-5" strokeWidth={2} />
@@ -69,15 +71,13 @@ export function TasksPage() {
     >
       <div className="mb-4 flex gap-2">
         {(['all', 'khai', 'wife'] as const).map((f) => (
-          <button
-            key={f}
-            className={segmentClass(filter === f)}
-            onClick={() => setFilter(f)}
-          >
+          <button key={f} className={segmentClass(filter === f)} onClick={() => setFilter(f)}>
             {f === 'all' ? 'Semua' : personLabel[f]}
           </button>
         ))}
       </div>
+
+      {loading && <ListSkeleton />}
 
       {!loading && filtered.length === 0 && (
         <EmptyState
@@ -89,8 +89,8 @@ export function TasksPage() {
 
       {pending.length > 0 && (
         <ul className="space-y-2">
-          {pending.map((t) => (
-            <TaskRow key={t.id} task={t} onToggle={toggleDone} onRemove={removeTask} />
+          {pending.map((t, idx) => (
+            <TaskRow key={t.id} task={t} index={idx} onToggle={toggleDone} onRemove={removeTask} />
           ))}
         </ul>
       )}
@@ -99,8 +99,8 @@ export function TasksPage() {
         <div className="mt-6">
           <p className="mb-2 text-sm font-medium text-neutral-400">Siap · {done.length}</p>
           <ul className="space-y-2">
-            {done.map((t) => (
-              <TaskRow key={t.id} task={t} onToggle={toggleDone} onRemove={removeTask} />
+            {done.map((t, idx) => (
+              <TaskRow key={t.id} task={t} index={idx} onToggle={toggleDone} onRemove={removeTask} />
             ))}
           </ul>
         </div>
@@ -113,6 +113,7 @@ export function TasksPage() {
             <input
               className={inputClass}
               required
+              autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="cth. Sapu lantai"
@@ -143,7 +144,7 @@ export function TasksPage() {
               onChange={(e) => setDueDate(e.target.value)}
             />
           </div>
-          <button type="submit" disabled={submitting} className={primaryButtonClass}>
+          <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
             {submitting ? 'Menyimpan...' : 'Simpan'}
           </button>
         </form>
@@ -154,40 +155,50 @@ export function TasksPage() {
 
 function TaskRow({
   task,
+  index,
   onToggle,
   onRemove,
 }: {
   task: Task
+  index: number
   onToggle: (id: string, isDone: boolean) => void
   onRemove: (id: string) => void
 }) {
+  const overdue = !task.isDone && task.dueDate != null && daysUntil(task.dueDate) < 0
+
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5">
+    <li
+      className="animate-fade-in-up flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5"
+      style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+    >
       <button
-        onClick={() => onToggle(task.id, !task.isDone)}
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
+        onClick={() => {
+          tick()
+          onToggle(task.id, !task.isDone)
+        }}
+        className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
           task.isDone ? 'border-accent bg-accent' : 'border-neutral-300'
         }`}
         aria-label={task.isDone ? 'Tanda belum siap' : 'Tanda siap'}
       >
-        {task.isDone && <div className="h-2 w-2 rounded-full bg-white" />}
+        {task.isDone && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
       </button>
       <div className="min-w-0 flex-1">
         <p
-          className={`truncate text-[15px] font-medium ${
+          className={`truncate text-[15px] font-medium transition-colors ${
             task.isDone ? 'text-neutral-400 line-through' : 'text-neutral-900'
           }`}
         >
           {task.title}
         </p>
-        <p className="text-sm text-neutral-400">
+        <p className={`text-sm ${overdue ? 'font-medium text-danger' : 'text-neutral-400'}`}>
           {personLabel[task.assignedTo]}
           {task.dueDate && ` · ${formatDate(task.dueDate)}`}
         </p>
       </div>
       <button
         onClick={() => onRemove(task.id)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
         aria-label="Padam"
       >
         <Trash2 className="h-4 w-4" strokeWidth={1.75} />

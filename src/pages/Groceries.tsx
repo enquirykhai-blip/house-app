@@ -3,9 +3,11 @@ import { Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
+import { ListSkeleton } from '../components/Skeleton'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroceries } from '../hooks/useGroceries'
+import { tick } from '../utils/haptics'
 import type { GroceryItem } from '../types'
 
 const categoryLabel: Record<GroceryItem['category'], string> = {
@@ -52,13 +54,15 @@ export function GroceriesPage() {
       action={
         <button
           onClick={() => setOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-white"
+          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20"
           aria-label="Tambah item"
         >
           <Plus className="h-5 w-5" strokeWidth={2} />
         </button>
       }
     >
+      {loading && <ListSkeleton />}
+
       {!loading && items.length === 0 && (
         <EmptyState
           icon={ShoppingCart}
@@ -69,8 +73,8 @@ export function GroceriesPage() {
 
       {unbought.length > 0 && (
         <ul className="space-y-2">
-          {unbought.map((i) => (
-            <GroceryRow key={i.id} item={i} onToggle={toggleBought} onRemove={removeItem} />
+          {unbought.map((i, idx) => (
+            <GroceryRow key={i.id} item={i} index={idx} onToggle={toggleBought} onRemove={removeItem} />
           ))}
         </ul>
       )}
@@ -79,13 +83,13 @@ export function GroceriesPage() {
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium text-neutral-400">Dah dibeli · {bought.length}</p>
-            <button onClick={clearBought} className="text-sm font-medium text-accent">
+            <button onClick={clearBought} className="press text-sm font-medium text-accent">
               Kosongkan
             </button>
           </div>
           <ul className="space-y-2">
-            {bought.map((i) => (
-              <GroceryRow key={i.id} item={i} onToggle={toggleBought} onRemove={removeItem} />
+            {bought.map((i, idx) => (
+              <GroceryRow key={i.id} item={i} index={idx} onToggle={toggleBought} onRemove={removeItem} />
             ))}
           </ul>
         </div>
@@ -98,6 +102,7 @@ export function GroceriesPage() {
             <input
               className={inputClass}
               required
+              autoFocus
               value={item}
               onChange={(e) => setItem(e.target.value)}
               placeholder="cth. Telur"
@@ -127,7 +132,7 @@ export function GroceriesPage() {
               placeholder="cth. 1 tray"
             />
           </div>
-          <button type="submit" disabled={submitting} className={primaryButtonClass}>
+          <button type="submit" disabled={submitting || !item.trim()} className={primaryButtonClass}>
             {submitting ? 'Menyimpan...' : 'Simpan'}
           </button>
         </form>
@@ -138,27 +143,35 @@ export function GroceriesPage() {
 
 function GroceryRow({
   item,
+  index,
   onToggle,
   onRemove,
 }: {
   item: GroceryItem
+  index: number
   onToggle: (id: string, isBought: boolean) => void
   onRemove: (id: string) => void
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5">
+    <li
+      className="animate-fade-in-up flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5"
+      style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+    >
       <button
-        onClick={() => onToggle(item.id, !item.isBought)}
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
+        onClick={() => {
+          tick()
+          onToggle(item.id, !item.isBought)
+        }}
+        className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
           item.isBought ? 'border-accent bg-accent' : 'border-neutral-300'
         }`}
         aria-label={item.isBought ? 'Tanda belum beli' : 'Tanda dah beli'}
       >
-        {item.isBought && <div className="h-2 w-2 rounded-full bg-white" />}
+        {item.isBought && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
       </button>
       <div className="min-w-0 flex-1">
         <p
-          className={`truncate text-[15px] font-medium ${
+          className={`truncate text-[15px] font-medium transition-colors ${
             item.isBought ? 'text-neutral-400 line-through' : 'text-neutral-900'
           }`}
         >
@@ -171,7 +184,7 @@ function GroceryRow({
       </div>
       <button
         onClick={() => onRemove(item.id)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
         aria-label="Padam"
       >
         <Trash2 className="h-4 w-4" strokeWidth={1.75} />

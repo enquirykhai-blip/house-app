@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Home } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { PasswordInput } from '../components/PasswordInput'
 import { inputClass, labelClass, primaryButtonClass } from '../components/ui'
 
 export function Login() {
@@ -26,7 +27,7 @@ export function Login() {
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-6">
-      <div className="mx-auto w-full max-w-sm">
+      <div className="animate-fade-in-up mx-auto w-full max-w-sm safe-top">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900">
             <Home className="h-7 w-7 text-white" strokeWidth={1.75} />
@@ -41,6 +42,7 @@ export function Login() {
             <input
               type="email"
               required
+              autoFocus
               autoComplete="email"
               className={inputClass}
               value={email}
@@ -50,18 +52,19 @@ export function Login() {
           </div>
           <div>
             <label className={labelClass}>Kata laluan</label>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              className={inputClass}
+            <PasswordInput
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
+              autoComplete="current-password"
               placeholder="••••••••"
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button type="submit" disabled={submitting} className={primaryButtonClass}>
+          {error && <p className="animate-fade-in-up text-sm text-danger">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting || !email || !password}
+            className={primaryButtonClass}
+          >
             {submitting ? 'Log masuk...' : 'Log masuk'}
           </button>
         </form>
