@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
 import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
+import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import { tick } from '../utils/haptics'
 import type { Person, Task } from '../types'
@@ -34,6 +35,8 @@ export function TasksPage() {
   const [assignedTo, setAssignedTo] = useState<Person>('both')
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useAutoOpenAdd(() => setOpen(true))
 
   const filtered = tasks
     .filter((t) => pendingDelete?.key !== `task-${t.id}`)

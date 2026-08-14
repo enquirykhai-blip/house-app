@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
 import { useGroceries } from '../hooks/useGroceries'
 import { useActivity } from '../hooks/useActivity'
+import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { tick } from '../utils/haptics'
 import type { GroceryItem } from '../types'
 
@@ -31,6 +32,8 @@ export function GroceriesPage() {
   const [category, setCategory] = useState<GroceryItem['category']>('dapur')
   const [quantity, setQuantity] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useAutoOpenAdd(() => setOpen(true))
 
   // Hide the item immediately once its delete is scheduled; if Undo is
   // pressed, `pending` clears and it reappears since it was never actually

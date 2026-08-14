@@ -59,6 +59,14 @@ export function fromDateInputValue(value: string): number {
   return new Date(y, m - 1, d).getTime()
 }
 
+/** Tailwind classes for a countdown badge: red if overdue, accent if due soon. */
+export function dateBadgeClass(dateMs: number): string {
+  const diff = daysUntil(dateMs)
+  if (diff < 0) return 'bg-danger-soft text-danger dark:bg-danger/15'
+  if (diff <= 3) return 'bg-accent-soft text-accent dark:bg-accent/15'
+  return 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
+}
+
 /** Short relative-time label for activity feeds, e.g. "5 minit lalu". */
 export function relativeTime(ms: number): string {
   const diffSec = Math.round((Date.now() - ms) / 1000)

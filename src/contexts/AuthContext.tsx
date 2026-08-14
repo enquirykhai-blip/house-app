@@ -38,6 +38,7 @@ interface AuthContextValue {
   logout: () => Promise<void>
   addDateCategory: (name: string) => Promise<void>
   toggleFavoriteGrocery: (favorite: FavoriteGrocery) => Promise<void>
+  updateDisplayName: (name: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -137,6 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateDoc(ref, { dateCategories: arrayUnion(trimmed) })
   }
 
+  async function updateDisplayName(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed || !role) return
+    const ref = doc(db, 'household', 'config')
+    await updateDoc(ref, role === 'khai' ? { khaiName: trimmed } : { wifeName: trimmed })
+  }
+
   async function toggleFavoriteGrocery(favorite: FavoriteGrocery) {
     const ref = doc(db, 'household', 'config')
     const current = config?.favoriteGroceries ?? []
@@ -186,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         addDateCategory,
         toggleFavoriteGrocery,
+        updateDisplayName,
       }}
     >
       {children}

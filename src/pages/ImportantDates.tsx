@@ -12,20 +12,20 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { useActivity } from '../hooks/useActivity'
-import { countdownLabel, daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
+import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
+import {
+  countdownLabel,
+  dateBadgeClass,
+  formatDate,
+  fromDateInputValue,
+  toDateInputValue,
+} from '../utils/date'
 import type { ImportantDate } from '../types'
 
 const repeatLabel: Record<ImportantDate['repeat'], string> = {
   none: 'Sekali sahaja',
   monthly: 'Setiap bulan',
   yearly: 'Setiap tahun',
-}
-
-function badgeClass(dateMs: number): string {
-  const diff = daysUntil(dateMs)
-  if (diff < 0) return 'bg-danger-soft text-danger dark:bg-danger/15'
-  if (diff <= 3) return 'bg-accent-soft text-accent dark:bg-accent/15'
-  return 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
 }
 
 export function ImportantDatesPage() {
@@ -53,6 +53,8 @@ export function ImportantDatesPage() {
     setNotes('')
     setOpen(true)
   }
+
+  useAutoOpenAdd(openForAdd)
 
   function openForEdit(d: ImportantDate) {
     setEditingId(d.id)
@@ -143,7 +145,7 @@ export function ImportantDatesPage() {
                   {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}
                 </button>
                 <span
-                  className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(d.date)}`}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${dateBadgeClass(d.date)}`}
                 >
                   {countdownLabel(d.date)}
                 </span>
