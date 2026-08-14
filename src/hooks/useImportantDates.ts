@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDocsFromServer,
   onSnapshot,
   orderBy,
   query,
+  type Query,
   updateDoc,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -24,9 +26,12 @@ type DateInput = {
 export function useImportantDates() {
   const [dates, setDates] = useState<ImportantDate[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const queryRef = useRef<Query | null>(null)
 
   useEffect(() => {
     const q = query(collection(db, 'important_dates'), orderBy('date', 'asc'))
+    queryRef.current = q
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ImportantDate)
       setDates(list)
@@ -72,5 +77,16 @@ export function useImportantDates() {
     await deleteDoc(doc(db, 'important_dates', id))
   }
 
-  return { dates, loading, addDate, updateDate, removeDate }
+  async function refresh() {
+    if (!queryRef.current) return
+    setRefreshing(true)
+    try {
+      const snap = await getDocsFromServer(queryRef.current)
+      setDates(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ImportantDate))
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  return { dates, loading, refreshing, refresh, addDate, updateDate, removeDate }
 }

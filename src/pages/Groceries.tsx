@@ -4,6 +4,7 @@ import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
+import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
@@ -21,7 +22,8 @@ const categoryLabel: Record<GroceryItem['category'], string> = {
 
 export function GroceriesPage() {
   const { user, displayName, favoriteGroceries, toggleFavoriteGrocery } = useAuth()
-  const { items, loading, addItem, toggleBought, removeItem, clearBought } = useGroceries()
+  const { items, loading, refreshing, refresh, addItem, toggleBought, removeItem, clearBought } =
+    useGroceries()
   const { logActivity } = useActivity()
   const { pending, requestDelete } = useUndo()
   const [open, setOpen] = useState(false)
@@ -80,13 +82,16 @@ export function GroceriesPage() {
     <Screen
       title="Senarai Runcit"
       action={
-        <button
-          onClick={() => setOpen(true)}
-          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
-          aria-label="Tambah item"
-        >
-          <Plus className="h-5 w-5" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} refreshing={refreshing} />
+          <button
+            onClick={() => setOpen(true)}
+            className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
+            aria-label="Tambah item"
+          >
+            <Plus className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
       }
     >
       {loading && <ListSkeleton />}

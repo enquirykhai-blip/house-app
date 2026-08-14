@@ -5,6 +5,7 @@ import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
 import { CategoryPicker } from '../components/CategoryPicker'
+import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
@@ -29,7 +30,7 @@ function badgeClass(dateMs: number): string {
 
 export function ImportantDatesPage() {
   const { user, displayName, dateCategories, addDateCategory } = useAuth()
-  const { dates, loading, addDate, updateDate, removeDate } = useImportantDates()
+  const { dates, loading, refreshing, refresh, addDate, updateDate, removeDate } = useImportantDates()
   const { logActivity } = useActivity()
   const { pending: pendingDelete, requestDelete } = useUndo()
   const [open, setOpen] = useState(false)
@@ -96,13 +97,16 @@ export function ImportantDatesPage() {
     <Screen
       title="Tarikh Penting"
       action={
-        <button
-          onClick={openForAdd}
-          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
-          aria-label="Tambah tarikh"
-        >
-          <Plus className="h-5 w-5" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} refreshing={refreshing} />
+          <button
+            onClick={openForAdd}
+            className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
+            aria-label="Tambah tarikh"
+          >
+            <Plus className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
       }
     >
       {loading && <ListSkeleton />}

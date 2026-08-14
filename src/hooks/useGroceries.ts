@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDocsFromServer,
   onSnapshot,
   orderBy,
   query,
+  type Query,
   updateDoc,
   writeBatch,
 } from 'firebase/firestore'
@@ -16,9 +18,12 @@ import type { GroceryItem } from '../types'
 export function useGroceries() {
   const [items, setItems] = useState<GroceryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const queryRef = useRef<Query | null>(null)
 
   useEffect(() => {
     const q = query(collection(db, 'groceries'), orderBy('createdAt', 'desc'))
+    queryRef.current = q
     const unsub = onSnapshot(q, (snap) => {
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as GroceryItem))
       setLoading(false)
@@ -63,5 +68,16 @@ export function useGroceries() {
     await batch.commit()
   }
 
-  return { items, loading, addItem, toggleBought, removeItem, clearBought }
+  async function refresh() {
+    if (!queryRef.current) return
+    setRefreshing(true)
+    try {
+      const snap = await getDocsFromServer(queryRef.current)
+      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as GroceryItem))
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  return { items, loading, refreshing, refresh, addItem, toggleBought, removeItem, clearBought }
 }

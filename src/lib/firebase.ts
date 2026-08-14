@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { connectAuthEmulator, getAuth } from 'firebase/auth'
+import { browserLocalPersistence, connectAuthEmulator, getAuth, setPersistence } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
@@ -14,6 +14,12 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
+
+// Keep both accounts signed in indefinitely (survives closing the browser/
+// PWA) instead of only for the current session — this is a private 2-person
+// app, there's no scenario where a shared or logged-out-by-default login
+// makes sense here.
+void setPersistence(auth, browserLocalPersistence)
 
 // Local dev only: point at `firebase emulators:start` instead of the real
 // project when VITE_USE_EMULATOR=true. Never active in production builds.

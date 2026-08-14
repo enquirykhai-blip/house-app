@@ -4,6 +4,7 @@ import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
+import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
@@ -24,7 +25,7 @@ const personLabel: Record<Person, string> = {
 
 export function TasksPage() {
   const { user, displayName } = useAuth()
-  const { tasks, loading, addTask, toggleDone, removeTask } = useTasks()
+  const { tasks, loading, refreshing, refresh, addTask, toggleDone, removeTask } = useTasks()
   const { logActivity } = useActivity()
   const { pending: pendingDelete, requestDelete } = useUndo()
   const [filter, setFilter] = useState<Filter>('all')
@@ -80,13 +81,16 @@ export function TasksPage() {
     <Screen
       title="Tugasan Rumah"
       action={
-        <button
-          onClick={() => setOpen(true)}
-          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
-          aria-label="Tambah tugasan"
-        >
-          <Plus className="h-5 w-5" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} refreshing={refreshing} />
+          <button
+            onClick={() => setOpen(true)}
+            className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
+            aria-label="Tambah tugasan"
+          >
+            <Plus className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
       }
     >
       <div className="mb-4 flex gap-2">
