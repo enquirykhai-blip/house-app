@@ -32,7 +32,10 @@ export function useTasks() {
     createdBy: string
   }) {
     await addDoc(collection(db, 'tasks'), {
-      ...input,
+      title: input.title,
+      assignedTo: input.assignedTo,
+      dueDate: input.dueDate ?? null,
+      createdBy: input.createdBy,
       isDone: false,
       createdAt: Date.now(),
     })

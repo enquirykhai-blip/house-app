@@ -14,7 +14,7 @@ import {
 } from 'firebase/auth'
 import { arrayUnion, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
-import { DEFAULT_DATE_CATEGORIES, type HouseholdConfig } from '../types'
+import { DEFAULT_DATE_CATEGORIES, type FavoriteGrocery, type HouseholdConfig } from '../types'
 
 interface AuthContextValue {
   user: User | null
@@ -25,6 +25,7 @@ interface AuthContextValue {
   displayName: string | null
   signupOpen: boolean
   dateCategories: string[]
+  favoriteGroceries: FavoriteGrocery[]
   login: (email: string, password: string) => Promise<void>
   signup: (
     email: string,
@@ -34,6 +35,7 @@ interface AuthContextValue {
   ) => Promise<void>
   logout: () => Promise<void>
   addDateCategory: (name: string) => Promise<void>
+  toggleFavoriteGrocery: (favorite: FavoriteGrocery) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -110,6 +112,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateDoc(ref, { dateCategories: arrayUnion(trimmed) })
   }
 
+  async function toggleFavoriteGrocery(favorite: FavoriteGrocery) {
+    const ref = doc(db, 'household', 'config')
+    const current = config?.favoriteGroceries ?? []
+    const exists = current.some(
+      (f) => f.name === favorite.name && f.category === favorite.category,
+    )
+    const next = exists
+      ? current.filter((f) => !(f.name === favorite.name && f.category === favorite.category))
+      : [...current, favorite]
+    await updateDoc(ref, { favoriteGroceries: next })
+  }
+
   const role: 'khai' | 'wife' | null =
     user && config
       ? user.uid === config.khaiUid
@@ -126,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? config.dateCategories
       : DEFAULT_DATE_CATEGORIES
 
+  const favoriteGroceries = config?.favoriteGroceries ?? []
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,10 +153,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName,
         signupOpen,
         dateCategories,
+        favoriteGroceries,
         login,
         signup,
         logout,
         addDateCategory,
+        toggleFavoriteGrocery,
       }}
     >
       {children}

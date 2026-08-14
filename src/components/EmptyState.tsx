@@ -9,12 +9,12 @@ interface EmptyStateProps {
 export function EmptyState({ icon: Icon, title, subtitle }: EmptyStateProps) {
   return (
     <div className="animate-fade-in-up flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100">
-        <Icon className="h-6 w-6 text-neutral-400" strokeWidth={1.75} />
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <Icon className="h-6 w-6 text-neutral-400 dark:text-neutral-500" strokeWidth={1.75} />
       </div>
       <div>
-        <p className="text-[15px] font-medium text-neutral-700">{title}</p>
-        {subtitle && <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>}
+        <p className="text-[15px] font-medium text-neutral-700 dark:text-neutral-200">{title}</p>
+        {subtitle && <p className="mt-1 text-sm text-neutral-400 dark:text-neutral-500">{subtitle}</p>}
       </div>
     </div>
   )

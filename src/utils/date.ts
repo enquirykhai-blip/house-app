@@ -58,3 +58,17 @@ export function fromDateInputValue(value: string): number {
   const [y, m, d] = value.split('-').map(Number)
   return new Date(y, m - 1, d).getTime()
 }
+
+/** Short relative-time label for activity feeds, e.g. "5 minit lalu". */
+export function relativeTime(ms: number): string {
+  const diffSec = Math.round((Date.now() - ms) / 1000)
+  if (diffSec < 30) return 'baru sahaja'
+  if (diffSec < 60) return `${diffSec} saat lalu`
+  const diffMin = Math.round(diffSec / 60)
+  if (diffMin < 60) return `${diffMin} minit lalu`
+  const diffHour = Math.round(diffMin / 60)
+  if (diffHour < 24) return `${diffHour} jam lalu`
+  const diffDay = Math.round(diffHour / 24)
+  if (diffDay < 7) return `${diffDay} hari lalu`
+  return formatDate(ms)
+}

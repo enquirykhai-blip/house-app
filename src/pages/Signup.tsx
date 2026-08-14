@@ -41,10 +41,10 @@ export function Signup() {
     <div className="flex min-h-screen flex-col justify-center px-6">
       <div className="animate-fade-in-up safe-top mx-auto w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900">
-            <Home className="h-7 w-7 text-white" strokeWidth={1.75} />
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 dark:bg-white">
+            <Home className="h-7 w-7 text-white dark:text-neutral-900" strokeWidth={1.75} />
           </div>
-          <h1 className="text-xl font-semibold text-neutral-900">Setup House App</h1>
+          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Setup House App</h1>
           <p className="mt-1 text-sm text-neutral-400">
             {khaiTaken || wifeTaken
               ? 'Satu akaun dah didaftar. Daftar akaun kedua.'

@@ -41,7 +41,7 @@ export function CategoryPicker({ categories, value, onChange, onAddCategory }: C
         ))}
         <button
           type="button"
-          className="press flex items-center gap-1 rounded-full bg-neutral-100 px-3.5 py-2 text-[13px] font-medium text-neutral-500"
+          className="press flex items-center gap-1 rounded-full bg-neutral-100 px-3.5 py-2 text-[13px] font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
           onClick={() => setAdding((v) => !v)}
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2} />
@@ -61,7 +61,7 @@ export function CategoryPicker({ categories, value, onChange, onAddCategory }: C
           <button
             type="submit"
             disabled={submitting || !name.trim()}
-            className="press shrink-0 rounded-xl bg-neutral-900 px-4 text-[13px] font-semibold text-white disabled:opacity-40"
+            className="press shrink-0 rounded-xl bg-neutral-900 px-4 text-[13px] font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
           >
             Tambah
           </button>

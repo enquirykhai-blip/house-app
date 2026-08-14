@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-accent: #ff6a3d;
   --color-accent-soft: #ffe4d9;
@@ -13,13 +15,19 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
     touch-action: manipulation;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-neutral-50 text-neutral-900 antialiased;
+    @apply bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-50;
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
     touch-action: manipulation;
+    transition: background-color 0.2s ease;
   }
 
   input,
@@ -121,6 +129,15 @@
   }
 }
 
+@keyframes undo-countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 .animate-sheet-backdrop {
   animation: sheet-backdrop-in 0.2s ease-out;
 }
@@ -137,10 +154,19 @@
   animation: fade-in-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
+.animate-undo-countdown {
+  animation: undo-countdown 5s linear forwards;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #f0f0ef 25%, #f8f8f7 37%, #f0f0ef 63%);
   background-size: 400% 100%;
   animation: shimmer 1.4s ease infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #262626 25%, #303030 37%, #262626 63%);
+  background-size: 400% 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

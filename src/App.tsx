@@ -1,7 +1,10 @@
 import { Navigate, Route, HashRouter, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { UndoProvider } from './contexts/UndoContext'
 import { BottomNav } from './components/BottomNav'
 import { SplashScreen } from './components/SplashScreen'
+import { UndoToast } from './components/UndoToast'
 import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { Dashboard } from './pages/Dashboard'
@@ -14,6 +17,7 @@ function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto max-w-md">
       {children}
+      <UndoToast />
       <BottomNav />
     </div>
   )
@@ -91,11 +95,15 @@ function Router() {
 
 function App() {
   return (
-    <HashRouter>
-      <AuthProvider>
-        <Router />
-      </AuthProvider>
-    </HashRouter>
+    <ThemeProvider>
+      <HashRouter>
+        <AuthProvider>
+          <UndoProvider>
+            <Router />
+          </UndoProvider>
+        </AuthProvider>
+      </HashRouter>
+    </ThemeProvider>
   )
 }
 

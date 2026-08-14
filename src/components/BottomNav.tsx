@@ -10,7 +10,7 @@ const tabs = [
 
 export function BottomNav() {
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/85 backdrop-blur-md">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/85 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/85">
       <div className="mx-auto flex max-w-md items-stretch justify-between px-2">
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink
@@ -23,17 +23,19 @@ export function BottomNav() {
               <>
                 <span
                   className={`flex h-8 w-9 items-center justify-center rounded-full transition-colors duration-200 ${
-                    isActive ? 'bg-accent-soft' : ''
+                    isActive ? 'bg-accent-soft dark:bg-accent/15' : ''
                   }`}
                 >
                   <Icon
                     className={`h-5 w-5 transition-colors duration-200 ${
-                      isActive ? 'text-accent' : 'text-neutral-400'
+                      isActive ? 'text-accent' : 'text-neutral-400 dark:text-neutral-500'
                     }`}
                     strokeWidth={isActive ? 2.25 : 1.75}
                   />
                 </span>
-                <span className={isActive ? 'text-accent' : 'text-neutral-400'}>{label}</span>
+                <span className={isActive ? 'text-accent' : 'text-neutral-400 dark:text-neutral-500'}>
+                  {label}
+                </span>
               </>
             )}
           </NavLink>

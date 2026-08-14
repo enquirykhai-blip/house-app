@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react'
-import { CheckSquare, Plus, Trash2 } from 'lucide-react'
+import { CheckSquare, Plus } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
+import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
+import { useUndo } from '../contexts/UndoContext'
 import { useTasks } from '../hooks/useTasks'
+import { useActivity } from '../hooks/useActivity'
 import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import { tick } from '../utils/haptics'
 import type { Person, Task } from '../types'
@@ -20,8 +23,10 @@ const personLabel: Record<Person, string> = {
 }
 
 export function TasksPage() {
-  const { user } = useAuth()
+  const { user, displayName } = useAuth()
   const { tasks, loading, addTask, toggleDone, removeTask } = useTasks()
+  const { logActivity } = useActivity()
+  const { pending: pendingDelete, requestDelete } = useUndo()
   const [filter, setFilter] = useState<Filter>('all')
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -29,11 +34,13 @@ export function TasksPage() {
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const filtered = tasks.filter((t) => {
-    if (filter === 'all') return true
-    return t.assignedTo === filter || t.assignedTo === 'both'
-  })
-  const pending = filtered.filter((t) => !t.isDone)
+  const filtered = tasks
+    .filter((t) => pendingDelete?.key !== `task-${t.id}`)
+    .filter((t) => {
+      if (filter === 'all') return true
+      return t.assignedTo === filter || t.assignedTo === 'both'
+    })
+  const notDone = filtered.filter((t) => !t.isDone)
   const done = filtered.filter((t) => t.isDone)
 
   async function handleSubmit(e: FormEvent) {
@@ -47,6 +54,7 @@ export function TasksPage() {
         dueDate: dueDate ? fromDateInputValue(dueDate) : undefined,
         createdBy: user.uid,
       })
+      if (displayName) await logActivity(user.uid, displayName, `tambah tugasan "${title.trim()}"`)
       setTitle('')
       setAssignedTo('both')
       setDueDate('')
@@ -56,13 +64,25 @@ export function TasksPage() {
     }
   }
 
+  function handleToggle(t: Task, isDone: boolean) {
+    tick()
+    toggleDone(t.id, isDone)
+    if (isDone && displayName && user) {
+      logActivity(user.uid, displayName, `siapkan "${t.title}"`)
+    }
+  }
+
+  function handleDelete(t: Task) {
+    requestDelete(`task-${t.id}`, t.title, () => removeTask(t.id))
+  }
+
   return (
     <Screen
       title="Tugasan Rumah"
       action={
         <button
           onClick={() => setOpen(true)}
-          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20"
+          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
           aria-label="Tambah tugasan"
         >
           <Plus className="h-5 w-5" strokeWidth={2} />
@@ -87,10 +107,10 @@ export function TasksPage() {
         />
       )}
 
-      {pending.length > 0 && (
+      {notDone.length > 0 && (
         <ul className="space-y-2">
-          {pending.map((t, idx) => (
-            <TaskRow key={t.id} task={t} index={idx} onToggle={toggleDone} onRemove={removeTask} />
+          {notDone.map((t, idx) => (
+            <TaskRow key={t.id} task={t} index={idx} onToggle={handleToggle} onDelete={handleDelete} />
           ))}
         </ul>
       )}
@@ -100,7 +120,7 @@ export function TasksPage() {
           <p className="mb-2 text-sm font-medium text-neutral-400">Siap · {done.length}</p>
           <ul className="space-y-2">
             {done.map((t, idx) => (
-              <TaskRow key={t.id} task={t} index={idx} onToggle={toggleDone} onRemove={removeTask} />
+              <TaskRow key={t.id} task={t} index={idx} onToggle={handleToggle} onDelete={handleDelete} />
             ))}
           </ul>
         </div>
@@ -157,52 +177,43 @@ function TaskRow({
   task,
   index,
   onToggle,
-  onRemove,
+  onDelete,
 }: {
   task: Task
   index: number
-  onToggle: (id: string, isDone: boolean) => void
-  onRemove: (id: string) => void
+  onToggle: (task: Task, isDone: boolean) => void
+  onDelete: (task: Task) => void
 }) {
   const overdue = !task.isDone && task.dueDate != null && daysUntil(task.dueDate) < 0
 
   return (
-    <li
-      className="animate-fade-in-up flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5"
-      style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
-    >
-      <button
-        onClick={() => {
-          tick()
-          onToggle(task.id, !task.isDone)
-        }}
-        className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-          task.isDone ? 'border-accent bg-accent' : 'border-neutral-300'
-        }`}
-        aria-label={task.isDone ? 'Tanda belum siap' : 'Tanda siap'}
-      >
-        {task.isDone && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
-      </button>
-      <div className="min-w-0 flex-1">
-        <p
-          className={`truncate text-[15px] font-medium transition-colors ${
-            task.isDone ? 'text-neutral-400 line-through' : 'text-neutral-900'
-          }`}
-        >
-          {task.title}
-        </p>
-        <p className={`text-sm ${overdue ? 'font-medium text-danger' : 'text-neutral-400'}`}>
-          {personLabel[task.assignedTo]}
-          {task.dueDate && ` · ${formatDate(task.dueDate)}`}
-        </p>
-      </div>
-      <button
-        onClick={() => onRemove(task.id)}
-        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
-        aria-label="Padam"
-      >
-        <Trash2 className="h-4 w-4" strokeWidth={1.75} />
-      </button>
+    <li className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
+      <SwipeToDelete onDelete={() => onDelete(task)}>
+        <div className="flex items-center gap-3 border border-neutral-200 bg-white p-3.5 dark:border-neutral-800 dark:bg-neutral-900">
+          <button
+            onClick={() => onToggle(task, !task.isDone)}
+            className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+              task.isDone ? 'border-accent bg-accent' : 'border-neutral-300 dark:border-neutral-600'
+            }`}
+            aria-label={task.isDone ? 'Tanda belum siap' : 'Tanda siap'}
+          >
+            {task.isDone && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
+          </button>
+          <div className="min-w-0 flex-1">
+            <p
+              className={`truncate text-[15px] font-medium transition-colors ${
+                task.isDone ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-neutral-50'
+              }`}
+            >
+              {task.title}
+            </p>
+            <p className={`text-sm ${overdue ? 'font-medium text-danger' : 'text-neutral-400'}`}>
+              {personLabel[task.assignedTo]}
+              {task.dueDate && ` · ${formatDate(task.dueDate)}`}
+            </p>
+          </div>
+        </div>
+      </SwipeToDelete>
     </li>
   )
 }

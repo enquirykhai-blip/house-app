@@ -1,13 +1,16 @@
 import { useState, type FormEvent } from 'react'
-import { CalendarClock, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, Plus } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
 import { CategoryPicker } from '../components/CategoryPicker'
+import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
+import { useUndo } from '../contexts/UndoContext'
 import { useImportantDates } from '../hooks/useImportantDates'
+import { useActivity } from '../hooks/useActivity'
 import { countdownLabel, daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import type { ImportantDate } from '../types'
 
@@ -19,14 +22,16 @@ const repeatLabel: Record<ImportantDate['repeat'], string> = {
 
 function badgeClass(dateMs: number): string {
   const diff = daysUntil(dateMs)
-  if (diff < 0) return 'bg-danger-soft text-danger'
-  if (diff <= 3) return 'bg-accent-soft text-accent'
-  return 'bg-neutral-100 text-neutral-500'
+  if (diff < 0) return 'bg-danger-soft text-danger dark:bg-danger/15'
+  if (diff <= 3) return 'bg-accent-soft text-accent dark:bg-accent/15'
+  return 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
 }
 
 export function ImportantDatesPage() {
-  const { user, dateCategories, addDateCategory } = useAuth()
+  const { user, displayName, dateCategories, addDateCategory } = useAuth()
   const { dates, loading, addDate, updateDate, removeDate } = useImportantDates()
+  const { logActivity } = useActivity()
+  const { pending: pendingDelete, requestDelete } = useUndo()
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -35,6 +40,8 @@ export function ImportantDatesPage() {
   const [repeat, setRepeat] = useState<ImportantDate['repeat']>('none')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const visibleDates = dates.filter((d) => pendingDelete?.key !== `date-${d.id}`)
 
   function openForAdd() {
     setEditingId(null)
@@ -70,13 +77,19 @@ export function ImportantDatesPage() {
       }
       if (editingId) {
         await updateDate(editingId, payload)
+        if (displayName) await logActivity(user.uid, displayName, `kemaskini "${payload.title}"`)
       } else {
         await addDate({ ...payload, createdBy: user.uid })
+        if (displayName) await logActivity(user.uid, displayName, `tambah tarikh "${payload.title}"`)
       }
       setOpen(false)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleDelete(d: ImportantDate) {
+    requestDelete(`date-${d.id}`, d.title, () => removeDate(d.id))
   }
 
   return (
@@ -85,7 +98,7 @@ export function ImportantDatesPage() {
       action={
         <button
           onClick={openForAdd}
-          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20"
+          className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
           aria-label="Tambah tarikh"
         >
           <Plus className="h-5 w-5" strokeWidth={2} />
@@ -94,7 +107,7 @@ export function ImportantDatesPage() {
     >
       {loading && <ListSkeleton />}
 
-      {!loading && dates.length === 0 && (
+      {!loading && visibleDates.length === 0 && (
         <EmptyState
           icon={CalendarClock}
           title="Takde tarikh lagi, tambah satu"
@@ -103,38 +116,35 @@ export function ImportantDatesPage() {
       )}
 
       <ul className="space-y-2.5">
-        {dates.map((d, idx) => (
+        {visibleDates.map((d, idx) => (
           <li
             key={d.id}
-            className="animate-fade-in-up flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4"
+            className="animate-fade-in-up"
             style={{ animationDelay: `${Math.min(idx, 8) * 30}ms` }}
           >
-            <button
-              onClick={() => openForEdit(d)}
-              className="press min-w-0 flex-1 text-left"
-              aria-label={`Edit ${d.title}`}
-            >
-              <p className="truncate text-[15px] font-medium text-neutral-900">{d.title}</p>
-              <p className="mt-0.5 text-sm text-neutral-400">
-                {formatDate(d.date)} · {d.category}
-                {d.repeat !== 'none' && ` · ${repeatLabel[d.repeat]}`}
-              </p>
-              {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}
-            </button>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span
-                className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(d.date)}`}
-              >
-                {countdownLabel(d.date)}
-              </span>
-              <button
-                onClick={() => removeDate(d.id)}
-                className="press flex h-8 w-8 items-center justify-center rounded-full text-neutral-300 active:text-red-400"
-                aria-label="Padam"
-              >
-                <Trash2 className="h-4 w-4" strokeWidth={1.75} />
-              </button>
-            </div>
+            <SwipeToDelete onDelete={() => handleDelete(d)}>
+              <div className="flex items-center justify-between gap-2 border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <button
+                  onClick={() => openForEdit(d)}
+                  className="press min-w-0 flex-1 text-left"
+                  aria-label={`Edit ${d.title}`}
+                >
+                  <p className="truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
+                    {d.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-neutral-400">
+                    {formatDate(d.date)} · {d.category}
+                    {d.repeat !== 'none' && ` · ${repeatLabel[d.repeat]}`}
+                  </p>
+                  {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}
+                </button>
+                <span
+                  className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(d.date)}`}
+                >
+                  {countdownLabel(d.date)}
+                </span>
+              </div>
+            </SwipeToDelete>
           </li>
         ))}
       </ul>

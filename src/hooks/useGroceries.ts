@@ -33,7 +33,10 @@ export function useGroceries() {
     addedBy: string
   }) {
     await addDoc(collection(db, 'groceries'), {
-      ...input,
+      item: input.item,
+      category: input.category,
+      quantity: input.quantity ?? null,
+      addedBy: input.addedBy,
       isBought: false,
       createdAt: Date.now(),
     })

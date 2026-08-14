@@ -17,7 +17,7 @@ export interface GroceryItem {
   id: string
   item: string
   category: 'dapur' | 'mandian' | 'lain'
-  quantity?: string
+  quantity?: string | null
   isBought: boolean
   addedBy: string
   createdAt: number
@@ -28,11 +28,16 @@ export interface Task {
   id: string
   title: string
   assignedTo: Person
-  dueDate?: number
+  dueDate?: number | null
   isDone: boolean
   createdBy: string
   createdAt: number
   completedAt?: number
+}
+
+export interface FavoriteGrocery {
+  name: string
+  category: GroceryItem['category']
 }
 
 export interface HouseholdConfig {
@@ -41,4 +46,13 @@ export interface HouseholdConfig {
   khaiUid: string
   wifeUid: string
   dateCategories?: string[]
+  favoriteGroceries?: FavoriteGrocery[]
+}
+
+export interface Activity {
+  id: string
+  actorUid: string
+  actorName: string
+  action: string
+  createdAt: number
 }

@@ -34,7 +34,7 @@ export function PasswordInput({
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="press absolute inset-y-0 right-0 flex w-11 items-center justify-center text-neutral-400"
+        className="press absolute inset-y-0 right-0 flex w-11 items-center justify-center text-neutral-400 dark:text-neutral-500"
         aria-label={visible ? 'Sembunyi kata laluan' : 'Tunjuk kata laluan'}
         tabIndex={-1}
       >
