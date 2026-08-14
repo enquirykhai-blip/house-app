@@ -26,6 +26,8 @@ interface AuthContextValue {
   signupOpen: boolean
   dateCategories: string[]
   favoriteGroceries: FavoriteGrocery[]
+  authError: string | null
+  clearAuthError: () => void
   login: (email: string, password: string) => Promise<void>
   signup: (
     email: string,
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState<HouseholdConfig | null>(null)
   const [configLoading, setConfigLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    setConfigLoading(true)
     const ref = doc(db, 'household', 'config')
     const unsub = onSnapshot(
       ref,
@@ -69,9 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setConfigLoading(false)
       },
       () => {
-        // Not readable yet (e.g. logged out) — treat as unknown.
+        // Permission denied — either logged out (expected, not an error), or
+        // signed in with a UID that's neither khaiUid nor wifeUid. The
+        // latter is someone landing on an unrecognized account by mistake
+        // (e.g. via a stray signup); recover automatically instead of
+        // leaving them stuck looking at permanently empty lists forever.
+        //
+        // Checked here, inside the callback for THIS specific subscription,
+        // rather than as a separate effect reacting to `user`/`config`
+        // state: this closure's `user` is guaranteed to match the
+        // subscription that just failed. A separate effect can fire in the
+        // same commit as this one before its `setConfigLoading(true)` above
+        // is visible to that other effect, reading a stale `configLoading`
+        // from the *previous* user and misfiring for a legitimate account.
         setConfig(null)
         setConfigLoading(false)
+        if (user) {
+          signOut(auth)
+          setAuthError('Akaun ini bukan akaun rumah kita. Log masuk semula dengan akaun asal.')
+        }
       },
     )
     return unsub
@@ -80,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signupOpen = !config || !config.khaiUid || !config.wifeUid
 
   async function login(email: string, password: string) {
+    setAuthError(null)
     await signInWithEmailAndPassword(auth, email, password)
   }
 
@@ -103,6 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await signOut(auth)
+  }
+
+  function clearAuthError() {
+    setAuthError(null)
   }
 
   async function addDateCategory(name: string) {
@@ -154,6 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupOpen,
         dateCategories,
         favoriteGroceries,
+        authError,
+        clearAuthError,
         login,
         signup,
         logout,

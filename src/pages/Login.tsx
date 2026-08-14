@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { Home } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { inputClass, labelClass, primaryButtonClass } from '../components/ui'
 
 export function Login() {
-  const { login, signupOpen, configLoading } = useAuth()
+  const { login, authError, clearAuthError } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +35,12 @@ export function Login() {
           <p className="mt-1 text-sm text-neutral-400">Log masuk untuk teruskan</p>
         </div>
 
+        {authError && (
+          <p className="animate-fade-in-up mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-center text-sm text-danger dark:bg-danger/15">
+            {authError}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={labelClass}>Email</label>
@@ -46,7 +51,10 @@ export function Login() {
               autoComplete="email"
               className={inputClass}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (authError) clearAuthError()
+              }}
               placeholder="awak@contoh.com"
             />
           </div>
@@ -68,15 +76,6 @@ export function Login() {
             {submitting ? 'Log masuk...' : 'Log masuk'}
           </button>
         </form>
-
-        {!configLoading && signupOpen && (
-          <p className="mt-6 text-center text-sm text-neutral-400">
-            Setup kali pertama?{' '}
-            <Link to="/signup" className="font-medium text-accent">
-              Daftar akaun
-            </Link>
-          </p>
-        )}
       </div>
     </div>
   )

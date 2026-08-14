@@ -59,10 +59,11 @@ So bootstrap in two phases:
    Or just paste the contents of `firestore.rules.setup` into the Firestore
    Rules tab in the console and **Publish**.
 
-2. Open the app → you'll land on **Setup House App** (the signup screen,
-   only shown while fewer than 2 accounts exist). Sign up the first account,
-   choosing "Khai" or "Wife". Log out, sign up the second account with the
-   other role. After both exist, the signup route auto-redirects to login.
+2. Go directly to `/#/signup` in the app (there's deliberately no link to it
+   from the login screen — see below) to reach **Setup House App**. Sign up
+   the first account, choosing "Khai" or "Wife". Log out, go to `/#/signup`
+   again and sign up the second account with the other role. After both
+   exist, the signup route auto-redirects to login.
 
 3. **Deploy the real rules** (make sure `firebase.json` points at
    `firestore.rules`, the default — no editing needed, it reads the
@@ -74,6 +75,17 @@ So bootstrap in two phases:
 
 From this point on, the app is fully locked to those 2 accounts — signup is
 closed, and Firestore rejects any other UID.
+
+Note: the login screen intentionally has no "sign up" link. Once
+`household/config` has both UIDs set, Firestore rejects reading it while
+logged out (rules require auth), so the app can't reliably tell "no one's
+set up yet" apart from "already set up, just not logged in right now" —
+showing a signup link unconditionally would risk someone accidentally
+creating a stray extra account. `/#/signup` still works if you deliberately
+navigate there (needed to add the second account during setup), and if an
+account ever does end up signed in without matching `khaiUid`/`wifeUid`,
+the app signs it out automatically with an explanation rather than leaving
+it stuck looking at empty lists.
 
 ### 4. Deploy hosting (optional)
 
