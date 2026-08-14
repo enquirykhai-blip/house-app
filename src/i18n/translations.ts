@@ -62,6 +62,17 @@ const ms = {
   profileTitle: 'Profil',
   editName: 'Edit nama',
 
+  // Settings
+  settingsTitle: 'Tetapan',
+  settingsProfile: 'Profil',
+  settingsAppearance: 'Paparan',
+  appearanceLight: 'Terang',
+  appearanceDark: 'Gelap',
+  settingsLanguage: 'Bahasa',
+  languageMalay: 'Bahasa Melayu',
+  languageEnglish: 'English',
+  settingsAccount: 'Akaun',
+
   // Important dates
   datesPageTitle: 'Tarikh Penting',
   datesEmptyTitle: 'Takde tarikh lagi, tambah satu',
@@ -217,6 +228,16 @@ const en: Record<TranslationKey, string> = {
 
   profileTitle: 'Profile',
   editName: 'Edit name',
+
+  settingsTitle: 'Settings',
+  settingsProfile: 'Profile',
+  settingsAppearance: 'Appearance',
+  appearanceLight: 'Light',
+  appearanceDark: 'Dark',
+  settingsLanguage: 'Language',
+  languageMalay: 'Bahasa Melayu',
+  languageEnglish: 'English',
+  settingsAccount: 'Account',
 
   datesPageTitle: 'Important Dates',
   datesEmptyTitle: 'No dates yet, add one',

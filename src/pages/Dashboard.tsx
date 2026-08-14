@@ -1,24 +1,12 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  CalendarClock,
-  CheckSquare,
-  ChevronRight,
-  Languages,
-  LogOut,
-  Moon,
-  ShoppingCart,
-  Sun,
-} from 'lucide-react'
+import { CalendarClock, CheckSquare, ChevronRight, Settings, ShoppingCart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { useGroceries } from '../hooks/useGroceries'
 import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
 import { Avatar } from '../components/Avatar'
-import { ProfileSheet } from '../components/ProfileSheet'
 import { MemoBoard } from '../components/MemoBoard'
 import { countdownLabel, dateBadgeClass, relativeTime } from '../utils/date'
 import type { ActivityType } from '../types'
@@ -35,15 +23,13 @@ const activityVerb: Record<ActivityType, TranslationKey> = {
 }
 
 export function Dashboard() {
-  const { config, displayName, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const { language, toggleLanguage, t } = useLanguage()
+  const { config, displayName } = useAuth()
+  const { language, t } = useLanguage()
   const navigate = useNavigate()
   const { dates } = useImportantDates()
   const { items } = useGroceries()
   const { tasks } = useTasks()
   const { activities } = useActivity()
-  const [profileOpen, setProfileOpen] = useState(false)
 
   function greeting(): string {
     const hour = new Date().getHours()
@@ -81,39 +67,18 @@ export function Dashboard() {
               {t('homeTitle')}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleLanguage}
-              className="press flex h-9 items-center justify-center gap-1 rounded-full bg-neutral-100 px-2.5 text-[11px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              aria-label={t('toggleLanguage')}
-            >
-              <Languages className="h-4 w-4" strokeWidth={1.75} />
-              {language.toUpperCase()}
-            </button>
-            <button
-              onClick={toggleTheme}
-              className="press flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              aria-label={t('toggleTheme')}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4" strokeWidth={1.75} />
-              ) : (
-                <Moon className="h-4 w-4" strokeWidth={1.75} />
-              )}
-            </button>
-            <button
-              onClick={logout}
-              className="press flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              aria-label={t('logout')}
-            >
-              <LogOut className="h-4 w-4" strokeWidth={1.75} />
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="press flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+            aria-label={t('settingsTitle')}
+          >
+            <Settings className="h-4 w-4" strokeWidth={1.75} />
+          </button>
         </div>
 
         {config && (
           <button
-            onClick={() => setProfileOpen(true)}
+            onClick={() => navigate('/settings')}
             className="press mt-4 flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left dark:border-neutral-800 dark:bg-neutral-900"
           >
             <div className="flex -space-x-2">
@@ -269,8 +234,6 @@ export function Dashboard() {
           </section>
         )}
       </main>
-
-      <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   )
 }

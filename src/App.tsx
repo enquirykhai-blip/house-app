@@ -12,6 +12,7 @@ import { Dashboard } from './pages/Dashboard'
 import { ImportantDatesPage } from './pages/ImportantDates'
 import { GroceriesPage } from './pages/Groceries'
 import { TasksPage } from './pages/Tasks'
+import { SettingsPage } from './pages/Settings'
 import type { ReactNode } from 'react'
 
 function AppShell({ children }: { children: ReactNode }) {
@@ -86,6 +87,14 @@ function Router() {
         element={
           <RequireAuth>
             <TasksPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <SettingsPage />
           </RequireAuth>
         }
       />

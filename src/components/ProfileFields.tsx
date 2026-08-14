@@ -1,27 +1,16 @@
 import { useState } from 'react'
 import { Check, Pencil } from 'lucide-react'
-import { Sheet } from './Sheet'
 import { Avatar } from './Avatar'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { inputClass } from './ui'
 
-interface ProfileSheetProps {
-  open: boolean
-  onClose: () => void
-}
-
-export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
+export function ProfileFields() {
   const { config, role, updateDisplayName } = useAuth()
   const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
-
-  function close() {
-    setEditing(false)
-    onClose()
-  }
 
   if (!config) return null
 
@@ -48,14 +37,14 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
   }
 
   return (
-    <Sheet open={open} onClose={close} title={t('profileTitle')}>
+    <div>
       <div className="space-y-2">
         {members.map((m) => {
           const isMe = m.key === role
           return (
             <div
               key={m.key}
-              className="flex items-center gap-3 rounded-2xl border border-neutral-200 p-3.5 dark:border-neutral-800"
+              className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3.5 dark:border-neutral-800 dark:bg-neutral-900"
             >
               <Avatar name={m.name || '?'} accent={isMe} />
               <div className="min-w-0 flex-1">
@@ -84,7 +73,7 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
             e.preventDefault()
             handleSave()
           }}
-          className="animate-fade-in-up mt-4 flex gap-2"
+          className="animate-fade-in-up mt-3 flex gap-2"
         >
           <input
             autoFocus
@@ -103,6 +92,6 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
           </button>
         </form>
       )}
-    </Sheet>
+    </div>
   )
 }
