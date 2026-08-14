@@ -85,16 +85,33 @@ firebase deploy --only hosting --project <your-project-id>
 Or skip this and just run `npm run dev` on your own devices — hosting isn't
 required for the app to work for just the two of you.
 
+### 5. Testing changes locally without touching prod data
+
+```bash
+firebase emulators:start --only auth,firestore
+```
+
+Then run the dev server with `VITE_USE_EMULATOR=true` in `.env` (in addition
+to the real `VITE_FIREBASE_*` values — the emulator only needs a valid
+`projectId` to match, the rest can be anything). `src/lib/firebase.ts`
+detects that flag in dev builds and points at `127.0.0.1:9099`/`:8080`
+instead of the real project, so you can sign up test accounts, add/edit/
+delete data, and try things without risking real household data. Never set
+this flag in `.env.production` — it's dev-only by design.
+
 ## Data model
 
-- `important_dates/{id}` — title, date, category (bil/anniversary/lain),
-  repeat (none/monthly/yearly), notes, createdBy, createdAt. Passed
-  repeating dates auto-roll forward to their next occurrence.
+- `important_dates/{id}` — title, date, category (free text — see
+  `dateCategories` below), repeat (none/monthly/yearly), notes, createdBy,
+  createdAt. Passed repeating dates auto-roll forward to their next
+  occurrence.
 - `groceries/{id}` — item, category (dapur/mandian/lain), quantity,
   isBought, addedBy, createdAt, boughtAt.
 - `tasks/{id}` — title, assignedTo (khai/wife/both), dueDate, isDone,
   createdBy, createdAt, completedAt.
-- `household/config` — single doc: khaiName, wifeName, khaiUid, wifeUid.
+- `household/config` — single doc: khaiName, wifeName, khaiUid, wifeUid,
+  dateCategories (defaults to Utama/Appointment/Bercuti/Anniversary if
+  unset; grows via the "Kategori baru" button in the date form).
 
 All three collections sync in real time (`onSnapshot`) between both
 accounts — no refresh needed.
