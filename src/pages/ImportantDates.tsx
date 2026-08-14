@@ -26,8 +26,9 @@ function badgeClass(dateMs: number): string {
 
 export function ImportantDatesPage() {
   const { user, dateCategories, addDateCategory } = useAuth()
-  const { dates, loading, addDate, removeDate } = useImportantDates()
+  const { dates, loading, addDate, updateDate, removeDate } = useImportantDates()
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(toDateInputValue(Date.now()))
   const [category, setCategory] = useState(dateCategories[0])
@@ -35,12 +36,24 @@ export function ImportantDatesPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  function resetForm() {
+  function openForAdd() {
+    setEditingId(null)
     setTitle('')
     setDate(toDateInputValue(Date.now()))
     setCategory(dateCategories[0])
     setRepeat('none')
     setNotes('')
+    setOpen(true)
+  }
+
+  function openForEdit(d: ImportantDate) {
+    setEditingId(d.id)
+    setTitle(d.title)
+    setDate(toDateInputValue(d.date))
+    setCategory(d.category)
+    setRepeat(d.repeat)
+    setNotes(d.notes ?? '')
+    setOpen(true)
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -48,15 +61,18 @@ export function ImportantDatesPage() {
     if (!user) return
     setSubmitting(true)
     try {
-      await addDate({
+      const payload = {
         title: title.trim(),
         date: fromDateInputValue(date),
         category,
         repeat,
         notes: notes.trim() || undefined,
-        createdBy: user.uid,
-      })
-      resetForm()
+      }
+      if (editingId) {
+        await updateDate(editingId, payload)
+      } else {
+        await addDate({ ...payload, createdBy: user.uid })
+      }
       setOpen(false)
     } finally {
       setSubmitting(false)
@@ -68,7 +84,7 @@ export function ImportantDatesPage() {
       title="Tarikh Penting"
       action={
         <button
-          onClick={() => setOpen(true)}
+          onClick={openForAdd}
           className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20"
           aria-label="Tambah tarikh"
         >
@@ -93,14 +109,18 @@ export function ImportantDatesPage() {
             className="animate-fade-in-up flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4"
             style={{ animationDelay: `${Math.min(idx, 8) * 30}ms` }}
           >
-            <div className="min-w-0">
+            <button
+              onClick={() => openForEdit(d)}
+              className="press min-w-0 flex-1 text-left"
+              aria-label={`Edit ${d.title}`}
+            >
               <p className="truncate text-[15px] font-medium text-neutral-900">{d.title}</p>
               <p className="mt-0.5 text-sm text-neutral-400">
                 {formatDate(d.date)} · {d.category}
                 {d.repeat !== 'none' && ` · ${repeatLabel[d.repeat]}`}
               </p>
               {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}
-            </div>
+            </button>
             <div className="flex shrink-0 items-center gap-1.5">
               <span
                 className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass(d.date)}`}
@@ -119,7 +139,7 @@ export function ImportantDatesPage() {
         ))}
       </ul>
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Tambah Tarikh">
+      <Sheet open={open} onClose={() => setOpen(false)} title={editingId ? 'Edit Tarikh' : 'Tambah Tarikh'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={labelClass}>Tajuk</label>
@@ -176,7 +196,7 @@ export function ImportantDatesPage() {
             />
           </div>
           <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
-            {submitting ? 'Menyimpan...' : 'Simpan'}
+            {submitting ? 'Menyimpan...' : editingId ? 'Kemaskini' : 'Simpan'}
           </button>
         </form>
       </Sheet>

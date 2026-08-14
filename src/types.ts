@@ -8,7 +8,7 @@ export interface ImportantDate {
   date: number // epoch ms
   category: string
   repeat: 'none' | 'monthly' | 'yearly'
-  notes?: string
+  notes?: string | null
   createdBy: string
   createdAt: number
 }

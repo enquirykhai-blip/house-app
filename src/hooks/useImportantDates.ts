@@ -13,6 +13,14 @@ import { db } from '../lib/firebase'
 import type { ImportantDate } from '../types'
 import { nextOccurrence, startOfDay } from '../utils/date'
 
+type DateInput = {
+  title: string
+  date: number
+  category: string
+  repeat: ImportantDate['repeat']
+  notes?: string
+}
+
 export function useImportantDates() {
   const [dates, setDates] = useState<ImportantDate[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,17 +46,25 @@ export function useImportantDates() {
     return unsub
   }, [])
 
-  async function addDate(input: {
-    title: string
-    date: number
-    category: ImportantDate['category']
-    repeat: ImportantDate['repeat']
-    notes?: string
-    createdBy: string
-  }) {
+  async function addDate(input: DateInput & { createdBy: string }) {
     await addDoc(collection(db, 'important_dates'), {
-      ...input,
+      title: input.title,
+      date: input.date,
+      category: input.category,
+      repeat: input.repeat,
+      notes: input.notes ?? null,
+      createdBy: input.createdBy,
       createdAt: Date.now(),
+    })
+  }
+
+  async function updateDate(id: string, input: DateInput) {
+    await updateDoc(doc(db, 'important_dates', id), {
+      title: input.title,
+      date: input.date,
+      category: input.category,
+      repeat: input.repeat,
+      notes: input.notes ?? null,
     })
   }
 
@@ -56,5 +72,5 @@ export function useImportantDates() {
     await deleteDoc(doc(db, 'important_dates', id))
   }
 
-  return { dates, loading, addDate, removeDate }
+  return { dates, loading, addDate, updateDate, removeDate }
 }
