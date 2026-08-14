@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { Home } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { PasswordInput } from '../components/PasswordInput'
 import { inputClass, labelClass, primaryButtonClass } from '../components/ui'
+import type { TranslationKey } from '../i18n/translations'
 
 export function Login() {
   const { login, authError, clearAuthError } = useAuth()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +21,7 @@ export function Login() {
     try {
       await login(email, password)
     } catch {
-      setError('Email atau kata laluan salah.')
+      setError(t('loginError'))
     } finally {
       setSubmitting(false)
     }
@@ -31,19 +34,19 @@ export function Login() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 dark:bg-white">
             <Home className="h-7 w-7 text-white dark:text-neutral-900" strokeWidth={1.75} />
           </div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">House App</h1>
-          <p className="mt-1 text-sm text-neutral-400">Log masuk untuk teruskan</p>
+          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">{t('appName')}</h1>
+          <p className="mt-1 text-sm text-neutral-400">{t('loginSubtitle')}</p>
         </div>
 
         {authError && (
           <p className="animate-fade-in-up mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-center text-sm text-danger dark:bg-danger/15">
-            {authError}
+            {t(authError as TranslationKey)}
           </p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>{t('email')}</label>
             <input
               type="email"
               required
@@ -55,16 +58,16 @@ export function Login() {
                 setEmail(e.target.value)
                 if (authError) clearAuthError()
               }}
-              placeholder="awak@contoh.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
           <div>
-            <label className={labelClass}>Kata laluan</label>
+            <label className={labelClass}>{t('password')}</label>
             <PasswordInput
               value={password}
               onChange={setPassword}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder={t('passwordPlaceholder')}
             />
           </div>
           {error && <p className="animate-fade-in-up text-sm text-danger">{error}</p>}
@@ -73,7 +76,7 @@ export function Login() {
             disabled={submitting || !email || !password}
             className={primaryButtonClass}
           >
-            {submitting ? 'Log masuk...' : 'Log masuk'}
+            {submitting ? t('loggingIn') : t('loginButton')}
           </button>
         </form>
       </div>

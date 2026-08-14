@@ -9,23 +9,26 @@ import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
 import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import { tick } from '../utils/haptics'
 import type { Person, Task } from '../types'
+import type { TranslationKey } from '../i18n/translations'
 
 type Filter = 'all' | 'khai' | 'wife'
 
-const personLabel: Record<Person, string> = {
-  khai: 'Khai',
-  wife: 'Wife',
-  both: 'Berdua',
+const personKey: Record<Person, TranslationKey> = {
+  khai: 'personKhai',
+  wife: 'personWife',
+  both: 'personBoth',
 }
 
 export function TasksPage() {
   const { user, displayName } = useAuth()
+  const { t, language } = useLanguage()
   const { tasks, loading, refreshing, refresh, addTask, toggleDone, removeTask } = useTasks()
   const { logActivity } = useActivity()
   const { pending: pendingDelete, requestDelete } = useUndo()
@@ -58,7 +61,7 @@ export function TasksPage() {
         dueDate: dueDate ? fromDateInputValue(dueDate) : undefined,
         createdBy: user.uid,
       })
-      if (displayName) await logActivity(user.uid, displayName, `tambah tugasan "${title.trim()}"`)
+      if (displayName) await logActivity(user.uid, displayName, 'task_added', title.trim())
       setTitle('')
       setAssignedTo('both')
       setDueDate('')
@@ -72,7 +75,7 @@ export function TasksPage() {
     tick()
     toggleDone(t.id, isDone)
     if (isDone && displayName && user) {
-      logActivity(user.uid, displayName, `siapkan "${t.title}"`)
+      logActivity(user.uid, displayName, 'task_done', t.title)
     }
   }
 
@@ -82,14 +85,14 @@ export function TasksPage() {
 
   return (
     <Screen
-      title="Tugasan Rumah"
+      title={t('tasksPageTitle')}
       action={
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} refreshing={refreshing} />
           <button
             onClick={() => setOpen(true)}
             className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
-            aria-label="Tambah tugasan"
+            aria-label={t('addTask')}
           >
             <Plus className="h-5 w-5" strokeWidth={2} />
           </button>
@@ -99,7 +102,7 @@ export function TasksPage() {
       <div className="mb-4 flex gap-2">
         {(['all', 'khai', 'wife'] as const).map((f) => (
           <button key={f} className={segmentClass(filter === f)} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'Semua' : personLabel[f]}
+            {f === 'all' ? t('filterAll') : t(personKey[f])}
           </button>
         ))}
       </div>
@@ -107,47 +110,43 @@ export function TasksPage() {
       {loading && <ListSkeleton />}
 
       {!loading && filtered.length === 0 && (
-        <EmptyState
-          icon={CheckSquare}
-          title="Takde tugasan lagi"
-          subtitle="Tambah kerja rumah untuk berdua"
-        />
+        <EmptyState icon={CheckSquare} title={t('tasksEmptyTitle')} subtitle={t('tasksEmptySubtitle')} />
       )}
 
       {notDone.length > 0 && (
         <ul className="space-y-2">
           {notDone.map((t, idx) => (
-            <TaskRow key={t.id} task={t} index={idx} onToggle={handleToggle} onDelete={handleDelete} />
+            <TaskRow key={t.id} task={t} index={idx} lang={language} onToggle={handleToggle} onDelete={handleDelete} />
           ))}
         </ul>
       )}
 
       {done.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-sm font-medium text-neutral-400">Siap · {done.length}</p>
+          <p className="mb-2 text-sm font-medium text-neutral-400">{t('doneCount', { count: done.length })}</p>
           <ul className="space-y-2">
             {done.map((t, idx) => (
-              <TaskRow key={t.id} task={t} index={idx} onToggle={handleToggle} onDelete={handleDelete} />
+              <TaskRow key={t.id} task={t} index={idx} lang={language} onToggle={handleToggle} onDelete={handleDelete} />
             ))}
           </ul>
         </div>
       )}
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Tambah Tugasan">
+      <Sheet open={open} onClose={() => setOpen(false)} title={t('addTaskTitle')}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className={labelClass}>Tajuk</label>
+            <label className={labelClass}>{t('fieldTitle')}</label>
             <input
               className={inputClass}
               required
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="cth. Sapu lantai"
+              placeholder={t('taskPlaceholder')}
             />
           </div>
           <div>
-            <label className={labelClass}>Untuk siapa</label>
+            <label className={labelClass}>{t('assignedTo')}</label>
             <div className="flex gap-2">
               {(['khai', 'wife', 'both'] as const).map((p) => (
                 <button
@@ -156,13 +155,13 @@ export function TasksPage() {
                   className={segmentClass(assignedTo === p)}
                   onClick={() => setAssignedTo(p)}
                 >
-                  {personLabel[p]}
+                  {t(personKey[p])}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className={labelClass}>Tarikh akhir (opsyenal)</label>
+            <label className={labelClass}>{t('fieldDueDate', { optional: t('optional') })}</label>
             <input
               type="date"
               className={inputClass}
@@ -172,7 +171,7 @@ export function TasksPage() {
             />
           </div>
           <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
-            {submitting ? 'Menyimpan...' : 'Simpan'}
+            {submitting ? t('saving') : t('save')}
           </button>
         </form>
       </Sheet>
@@ -183,14 +182,17 @@ export function TasksPage() {
 function TaskRow({
   task,
   index,
+  lang,
   onToggle,
   onDelete,
 }: {
   task: Task
   index: number
+  lang: 'ms' | 'en'
   onToggle: (task: Task, isDone: boolean) => void
   onDelete: (task: Task) => void
 }) {
+  const { t } = useLanguage()
   const overdue = !task.isDone && task.dueDate != null && daysUntil(task.dueDate) < 0
 
   return (
@@ -202,7 +204,7 @@ function TaskRow({
             className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
               task.isDone ? 'border-accent bg-accent' : 'border-neutral-300 dark:border-neutral-600'
             }`}
-            aria-label={task.isDone ? 'Tanda belum siap' : 'Tanda siap'}
+            aria-label={task.isDone ? t('markNotDone') : t('markDone')}
           >
             {task.isDone && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
           </button>
@@ -215,8 +217,8 @@ function TaskRow({
               {task.title}
             </p>
             <p className={`text-sm ${overdue ? 'font-medium text-danger' : 'text-neutral-400'}`}>
-              {personLabel[task.assignedTo]}
-              {task.dueDate && ` · ${formatDate(task.dueDate)}`}
+              {t(personKey[task.assignedTo])}
+              {task.dueDate && ` · ${formatDate(task.dueDate, lang)}`}
             </p>
           </div>
         </div>

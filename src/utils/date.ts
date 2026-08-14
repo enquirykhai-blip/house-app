@@ -1,3 +1,7 @@
+import type { Language, TranslationKey } from '../i18n/translations'
+
+type T = (key: TranslationKey, params?: Record<string, string | number>) => string
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export function startOfDay(ms: number): number {
@@ -13,13 +17,13 @@ export function daysUntil(dateMs: number): number {
   return Math.round((target - today) / DAY_MS)
 }
 
-export function countdownLabel(dateMs: number): string {
+export function countdownLabel(dateMs: number, t: T): string {
   const diff = daysUntil(dateMs)
-  if (diff === 0) return 'Hari ini'
-  if (diff === 1) return 'Esok'
-  if (diff > 1) return `${diff} hari lagi`
-  if (diff === -1) return 'Semalam'
-  return `${Math.abs(diff)} hari lalu`
+  if (diff === 0) return t('today')
+  if (diff === 1) return t('tomorrow')
+  if (diff > 1) return t('daysLeft', { count: diff })
+  if (diff === -1) return t('yesterday')
+  return t('daysAgo', { count: Math.abs(diff) })
 }
 
 /**
@@ -37,8 +41,8 @@ export function nextOccurrence(dateMs: number, repeat: 'none' | 'monthly' | 'yea
   return next.getTime()
 }
 
-export function formatDate(dateMs: number): string {
-  return new Date(dateMs).toLocaleDateString('ms-MY', {
+export function formatDate(dateMs: number, lang: Language = 'ms'): string {
+  return new Date(dateMs).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ms-MY', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -67,16 +71,16 @@ export function dateBadgeClass(dateMs: number): string {
   return 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
 }
 
-/** Short relative-time label for activity feeds, e.g. "5 minit lalu". */
-export function relativeTime(ms: number): string {
+/** Short relative-time label for activity feeds, e.g. "5 minit lalu" / "5m ago". */
+export function relativeTime(ms: number, t: T, lang: Language = 'ms'): string {
   const diffSec = Math.round((Date.now() - ms) / 1000)
-  if (diffSec < 30) return 'baru sahaja'
-  if (diffSec < 60) return `${diffSec} saat lalu`
+  if (diffSec < 30) return t('justNow')
+  if (diffSec < 60) return t('secondsAgo', { count: diffSec })
   const diffMin = Math.round(diffSec / 60)
-  if (diffMin < 60) return `${diffMin} minit lalu`
+  if (diffMin < 60) return t('minutesAgo', { count: diffMin })
   const diffHour = Math.round(diffMin / 60)
-  if (diffHour < 24) return `${diffHour} jam lalu`
+  if (diffHour < 24) return t('hoursAgo', { count: diffHour })
   const diffDay = Math.round(diffHour / 24)
-  if (diffDay < 7) return `${diffDay} hari lalu`
-  return formatDate(ms)
+  if (diffDay < 7) return t('daysAgo', { count: diffDay })
+  return formatDate(ms, lang)
 }

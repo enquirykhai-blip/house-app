@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface RefreshButtonProps {
   onRefresh: () => Promise<void>
@@ -6,6 +7,7 @@ interface RefreshButtonProps {
 }
 
 export function RefreshButton({ onRefresh, refreshing }: RefreshButtonProps) {
+  const { t } = useLanguage()
   return (
     <button
       onClick={() => {
@@ -13,7 +15,7 @@ export function RefreshButton({ onRefresh, refreshing }: RefreshButtonProps) {
       }}
       disabled={refreshing}
       className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-      aria-label="Muat semula"
+      aria-label={t('refresh')}
     >
       <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.75} />
     </button>

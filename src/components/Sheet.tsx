@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface SheetProps {
   open: boolean
@@ -9,6 +10,7 @@ interface SheetProps {
 }
 
 export function Sheet({ open, onClose, title, children }: SheetProps) {
+  const { t } = useLanguage()
   const [mounted, setMounted] = useState(open)
   const [closing, setClosing] = useState(false)
 
@@ -55,7 +57,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
           <button
             onClick={onClose}
             className="press flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-            aria-label="Tutup"
+            aria-label={t('close')}
           >
             <X className="h-4 w-4" strokeWidth={2} />
           </button>

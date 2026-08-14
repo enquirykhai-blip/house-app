@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CheckSquare,
   ChevronRight,
+  Languages,
   LogOut,
   Moon,
   ShoppingCart,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useImportantDates } from '../hooks/useImportantDates'
 import { useGroceries } from '../hooks/useGroceries'
 import { useTasks } from '../hooks/useTasks'
@@ -18,24 +20,22 @@ import { useActivity } from '../hooks/useActivity'
 import { Avatar } from '../components/Avatar'
 import { ProfileSheet } from '../components/ProfileSheet'
 import { countdownLabel, dateBadgeClass, relativeTime } from '../utils/date'
+import type { ActivityType } from '../types'
+import type { TranslationKey } from '../i18n/translations'
 
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Selamat pagi'
-  if (hour < 15) return 'Selamat tengah hari'
-  if (hour < 19) return 'Selamat petang'
-  return 'Selamat malam'
+const activityVerb: Record<ActivityType, TranslationKey> = {
+  date_added: 'activityAddedDate',
+  date_updated: 'activityUpdatedDate',
+  grocery_added: 'activityAddedItem',
+  grocery_bought: 'activityBoughtItem',
+  task_added: 'activityAddedTask',
+  task_done: 'activityCompletedTask',
 }
-
-const quickAdd = [
-  { to: '/tarikh', label: 'Tarikh', icon: CalendarClock },
-  { to: '/runcit', label: 'Runcit', icon: ShoppingCart },
-  { to: '/tugasan', label: 'Tugasan', icon: CheckSquare },
-]
 
 export function Dashboard() {
   const { config, displayName, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { language, toggleLanguage, t } = useLanguage()
   const navigate = useNavigate()
   const { dates } = useImportantDates()
   const { items } = useGroceries()
@@ -43,11 +43,28 @@ export function Dashboard() {
   const { activities } = useActivity()
   const [profileOpen, setProfileOpen] = useState(false)
 
+  function greeting(): string {
+    const hour = new Date().getHours()
+    if (hour < 12) return t('greetingMorning')
+    if (hour < 15) return t('greetingNoon')
+    if (hour < 19) return t('greetingEvening')
+    return t('greetingNight')
+  }
+
+  const quickAdd = [
+    { to: '/tarikh', label: t('navDates'), icon: CalendarClock },
+    { to: '/runcit', label: t('navGroceries'), icon: ShoppingCart },
+    { to: '/tugasan', label: t('navTasks'), icon: CheckSquare },
+  ]
+
   const nextDate = dates.find((d) => d.date >= Date.now() - 24 * 60 * 60 * 1000)
   const unboughtGroceries = items.filter((i) => !i.isBought)
   const notDoneTasks = tasks.filter((t) => !t.isDone)
   const doneTasks = tasks.length - notDoneTasks.length
   const taskProgress = tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0
+  // Older entries were logged before the type/detail schema — skip rather
+  // than crash on the missing field.
+  const renderableActivities = activities.filter((a) => a.type in activityVerb)
 
   return (
     <div className="min-h-screen pb-28">
@@ -59,14 +76,22 @@ export function Dashboard() {
               {displayName ? `, ${displayName}` : ''}
             </p>
             <h1 className="text-[22px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-              Rumah kita
+              {t('homeTitle')}
             </h1>
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={toggleLanguage}
+              className="press flex h-9 items-center justify-center gap-1 rounded-full bg-neutral-100 px-2.5 text-[11px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+              aria-label={t('toggleLanguage')}
+            >
+              <Languages className="h-4 w-4" strokeWidth={1.75} />
+              {language.toUpperCase()}
+            </button>
+            <button
               onClick={toggleTheme}
               className="press flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              aria-label={theme === 'dark' ? 'Tukar ke mod cerah' : 'Tukar ke mod gelap'}
+              aria-label={t('toggleTheme')}
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4" strokeWidth={1.75} />
@@ -77,7 +102,7 @@ export function Dashboard() {
             <button
               onClick={logout}
               className="press flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              aria-label="Log keluar"
+              aria-label={t('logout')}
             >
               <LogOut className="h-4 w-4" strokeWidth={1.75} />
             </button>
@@ -103,7 +128,7 @@ export function Dashboard() {
 
       <main className="animate-fade-in-up space-y-5 px-5 pt-1">
         <section>
-          <p className="mb-2 px-1 text-[13px] font-medium text-neutral-400">Tambah pantas</p>
+          <p className="mb-2 px-1 text-[13px] font-medium text-neutral-400">{t('quickAdd')}</p>
           <div className="grid grid-cols-3 gap-2">
             {quickAdd.map(({ to, label, icon: Icon }) => (
               <button
@@ -131,15 +156,15 @@ export function Dashboard() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
-                  {nextDate ? nextDate.title : 'Tiada tarikh akan datang'}
+                  {nextDate ? nextDate.title : t('noUpcomingDate')}
                 </p>
-                <p className="text-sm text-neutral-400">Tarikh Penting</p>
+                <p className="text-sm text-neutral-400">{t('datesPageTitle')}</p>
               </div>
               {nextDate && (
                 <span
                   className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${dateBadgeClass(nextDate.date)}`}
                 >
-                  {countdownLabel(nextDate.date)}
+                  {countdownLabel(nextDate.date, t)}
                 </span>
               )}
             </div>
@@ -155,7 +180,10 @@ export function Dashboard() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
-                  {unboughtGroceries.length} item belum beli
+                  {t('itemsNotBought', {
+                    count: unboughtGroceries.length,
+                    plural: unboughtGroceries.length === 1 ? '' : 's',
+                  })}
                 </p>
                 <p className="truncate text-sm text-neutral-400">
                   {unboughtGroceries.length > 0
@@ -163,7 +191,7 @@ export function Dashboard() {
                         .slice(0, 3)
                         .map((i) => i.item)
                         .join(', ')
-                    : 'Senarai Runcit'}
+                    : t('groceriesPageTitle')}
                 </p>
               </div>
             </div>
@@ -179,9 +207,12 @@ export function Dashboard() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
-                  {notDoneTasks.length} tugasan belum siap
+                  {t('tasksNotDone', {
+                    count: notDoneTasks.length,
+                    plural: notDoneTasks.length === 1 ? '' : 's',
+                  })}
                 </p>
-                <p className="text-sm text-neutral-400">Tugasan Rumah</p>
+                <p className="text-sm text-neutral-400">{t('tasksPageTitle')}</p>
               </div>
               {tasks.length > 0 && (
                 <div className="h-8 w-8 shrink-0">
@@ -211,20 +242,23 @@ export function Dashboard() {
           </button>
         </section>
 
-        {activities.length > 0 && (
+        {renderableActivities.length > 0 && (
           <section>
-            <p className="mb-2 px-1 text-[13px] font-medium text-neutral-400">Aktiviti Terkini</p>
+            <p className="mb-2 px-1 text-[13px] font-medium text-neutral-400">{t('recentActivity')}</p>
             <div className="rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-              {activities.map((a, idx) => (
+              {renderableActivities.map((a, idx) => (
                 <div
                   key={a.id}
                   className={`px-4 py-3 text-[13px] text-neutral-500 dark:text-neutral-400 ${
-                    idx !== activities.length - 1 ? 'border-b border-neutral-100 dark:border-neutral-800' : ''
+                    idx !== renderableActivities.length - 1 ? 'border-b border-neutral-100 dark:border-neutral-800' : ''
                   }`}
                 >
                   <span className="font-medium text-neutral-700 dark:text-neutral-200">{a.actorName}</span>{' '}
-                  {a.action}
-                  <span className="text-neutral-300 dark:text-neutral-600"> · {relativeTime(a.createdAt)}</span>
+                  {t(activityVerb[a.type])} &ldquo;{a.detail}&rdquo;
+                  <span className="text-neutral-300 dark:text-neutral-600">
+                    {' '}
+                    · {relativeTime(a.createdAt, t, language)}
+                  </span>
                 </div>
               ))}
             </div>

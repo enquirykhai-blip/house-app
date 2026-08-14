@@ -3,6 +3,7 @@ import { Check, Pencil } from 'lucide-react'
 import { Sheet } from './Sheet'
 import { Avatar } from './Avatar'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { inputClass } from './ui'
 
 interface ProfileSheetProps {
@@ -12,6 +13,7 @@ interface ProfileSheetProps {
 
 export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
   const { config, role, updateDisplayName } = useAuth()
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -46,7 +48,7 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
   }
 
   return (
-    <Sheet open={open} onClose={close} title="Profil">
+    <Sheet open={open} onClose={close} title={t('profileTitle')}>
       <div className="space-y-2">
         {members.map((m) => {
           const isMe = m.key === role
@@ -60,13 +62,13 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
                 <p className="truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
                   {m.name || '—'}
                 </p>
-                <p className="text-sm text-neutral-400">{isMe ? 'Anda' : 'Pasangan anda'}</p>
+                <p className="text-sm text-neutral-400">{isMe ? t('you') : t('partner')}</p>
               </div>
               {isMe && (
                 <button
                   onClick={() => startEdit(m.name)}
                   className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-                  aria-label="Edit nama"
+                  aria-label={t('editName')}
                 >
                   <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </button>
@@ -89,13 +91,13 @@ export function ProfileSheet({ open, onClose }: ProfileSheetProps) {
             className={inputClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nama panggilan"
+            placeholder={t('nickname')}
           />
           <button
             type="submit"
             disabled={submitting || !name.trim()}
             className="press flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
-            aria-label="Simpan"
+            aria-label={t('save')}
           >
             <Check className="h-4 w-4" strokeWidth={2.5} />
           </button>

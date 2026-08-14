@@ -9,20 +9,23 @@ import { SwipeToDelete } from '../components/SwipeToDelete'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useGroceries } from '../hooks/useGroceries'
 import { useActivity } from '../hooks/useActivity'
 import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { tick } from '../utils/haptics'
 import type { GroceryItem } from '../types'
+import type { TranslationKey } from '../i18n/translations'
 
-const categoryLabel: Record<GroceryItem['category'], string> = {
-  dapur: 'Dapur',
-  mandian: 'Mandian',
-  lain: 'Lain',
+const categoryKey: Record<GroceryItem['category'], TranslationKey> = {
+  dapur: 'categoryDapur',
+  mandian: 'categoryMandian',
+  lain: 'categoryLain',
 }
 
 export function GroceriesPage() {
   const { user, displayName, favoriteGroceries, toggleFavoriteGrocery } = useAuth()
+  const { t } = useLanguage()
   const { items, loading, refreshing, refresh, addItem, toggleBought, removeItem, clearBought } =
     useGroceries()
   const { logActivity } = useActivity()
@@ -45,7 +48,7 @@ export function GroceriesPage() {
   async function addNamedItem(name: string, cat: GroceryItem['category']) {
     if (!user) return
     await addItem({ item: name, category: cat, addedBy: user.uid })
-    if (displayName) await logActivity(user.uid, displayName, `tambah item "${name}"`)
+    if (displayName) await logActivity(user.uid, displayName, 'grocery_added', name)
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -59,7 +62,7 @@ export function GroceriesPage() {
         quantity: quantity.trim() || undefined,
         addedBy: user.uid,
       })
-      if (displayName) await logActivity(user.uid, displayName, `tambah item "${item.trim()}"`)
+      if (displayName) await logActivity(user.uid, displayName, 'grocery_added', item.trim())
       setItem('')
       setQuantity('')
       setCategory('dapur')
@@ -73,7 +76,7 @@ export function GroceriesPage() {
     tick()
     toggleBought(i.id, isBought)
     if (isBought && displayName && user) {
-      logActivity(user.uid, displayName, `beli "${i.item}"`)
+      logActivity(user.uid, displayName, 'grocery_bought', i.item)
     }
   }
 
@@ -83,14 +86,14 @@ export function GroceriesPage() {
 
   return (
     <Screen
-      title="Senarai Runcit"
+      title={t('groceriesPageTitle')}
       action={
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} refreshing={refreshing} />
           <button
             onClick={() => setOpen(true)}
             className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
-            aria-label="Tambah item"
+            aria-label={t('addGroceryItem')}
           >
             <Plus className="h-5 w-5" strokeWidth={2} />
           </button>
@@ -115,11 +118,7 @@ export function GroceriesPage() {
       )}
 
       {!loading && items.length === 0 && (
-        <EmptyState
-          icon={ShoppingCart}
-          title="Senarai kosong, tambah item"
-          subtitle="Barang dapur, mandian, atau lain-lain"
-        />
+        <EmptyState icon={ShoppingCart} title={t('groceriesEmptyTitle')} subtitle={t('groceriesEmptySubtitle')} />
       )}
 
       {unbought.length > 0 && (
@@ -141,9 +140,9 @@ export function GroceriesPage() {
       {bought.length > 0 && (
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-neutral-400">Dah dibeli · {bought.length}</p>
+            <p className="text-sm font-medium text-neutral-400">{t('boughtCount', { count: bought.length })}</p>
             <button onClick={clearBought} className="press text-sm font-medium text-accent">
-              Kosongkan
+              {t('clearBought')}
             </button>
           </div>
           <ul className="space-y-2">
@@ -162,21 +161,21 @@ export function GroceriesPage() {
         </div>
       )}
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Tambah Item">
+      <Sheet open={open} onClose={() => setOpen(false)} title={t('addItemTitle')}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className={labelClass}>Nama item</label>
+            <label className={labelClass}>{t('fieldItemName')}</label>
             <input
               className={inputClass}
               required
               autoFocus
               value={item}
               onChange={(e) => setItem(e.target.value)}
-              placeholder="cth. Telur"
+              placeholder={t('itemPlaceholder')}
             />
           </div>
           <div>
-            <label className={labelClass}>Kategori</label>
+            <label className={labelClass}>{t('fieldCategory')}</label>
             <div className="flex gap-2">
               {(['dapur', 'mandian', 'lain'] as const).map((c) => (
                 <button
@@ -185,22 +184,22 @@ export function GroceriesPage() {
                   className={segmentClass(category === c)}
                   onClick={() => setCategory(c)}
                 >
-                  {categoryLabel[c]}
+                  {t(categoryKey[c])}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className={labelClass}>Kuantiti (opsyenal)</label>
+            <label className={labelClass}>{t('fieldQuantity', { optional: t('optional') })}</label>
             <input
               className={inputClass}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="cth. 1 tray"
+              placeholder={t('quantityPlaceholder')}
             />
           </div>
           <button type="submit" disabled={submitting || !item.trim()} className={primaryButtonClass}>
-            {submitting ? 'Menyimpan...' : 'Simpan'}
+            {submitting ? t('saving') : t('save')}
           </button>
         </form>
       </Sheet>
@@ -223,6 +222,7 @@ function GroceryRow({
   onToggleFavorite: () => void
   onDelete: (item: GroceryItem) => void
 }) {
+  const { t } = useLanguage()
   return (
     <li
       className="animate-fade-in-up"
@@ -235,7 +235,7 @@ function GroceryRow({
             className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
               item.isBought ? 'border-accent bg-accent' : 'border-neutral-300 dark:border-neutral-600'
             }`}
-            aria-label={item.isBought ? 'Tanda belum beli' : 'Tanda dah beli'}
+            aria-label={item.isBought ? t('markUnbought') : t('markBought')}
           >
             {item.isBought && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
           </button>
@@ -250,14 +250,14 @@ function GroceryRow({
               {item.item}
             </p>
             <p className="text-sm text-neutral-400">
-              {categoryLabel[item.category]}
+              {t(categoryKey[item.category])}
               {item.quantity && ` · ${item.quantity}`}
             </p>
           </div>
           <button
             onClick={onToggleFavorite}
             className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-300 dark:text-neutral-600"
-            aria-label={isFavorite ? 'Buang dari kerap dibeli' : 'Tanda kerap dibeli'}
+            aria-label={isFavorite ? t('unmarkFavorite') : t('markFavorite')}
           >
             <Heart
               className={`h-4 w-4 ${isFavorite ? 'fill-accent text-accent' : ''}`}

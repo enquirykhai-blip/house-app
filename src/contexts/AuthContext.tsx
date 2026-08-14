@@ -91,7 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setConfigLoading(false)
         if (user) {
           signOut(auth)
-          setAuthError('Akaun ini bukan akaun rumah kita. Log masuk semula dengan akaun asal.')
+          // Stores a translation key, not the final message — Login.tsx
+          // renders it via t() so it respects the current language.
+          setAuthError('wrongHouseholdError')
         }
       },
     )

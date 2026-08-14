@@ -49,10 +49,20 @@ export interface HouseholdConfig {
   favoriteGroceries?: FavoriteGrocery[]
 }
 
+export type ActivityType =
+  | 'date_added'
+  | 'date_updated'
+  | 'grocery_added'
+  | 'grocery_bought'
+  | 'task_added'
+  | 'task_done'
+
 export interface Activity {
   id: string
   actorUid: string
   actorName: string
-  action: string
+  type: ActivityType
+  /** The title/item name the action was about — user content, never translated. */
+  detail: string
   createdAt: number
 }

@@ -1,14 +1,17 @@
 import { NavLink } from 'react-router-dom'
 import { CalendarClock, CheckSquare, Home, ShoppingCart } from 'lucide-react'
-
-const tabs = [
-  { to: '/', label: 'Home', icon: Home, end: true },
-  { to: '/tarikh', label: 'Tarikh', icon: CalendarClock, end: false },
-  { to: '/runcit', label: 'Runcit', icon: ShoppingCart, end: false },
-  { to: '/tugasan', label: 'Tugasan', icon: CheckSquare, end: false },
-]
+import { useLanguage } from '../contexts/LanguageContext'
 
 export function BottomNav() {
+  const { t } = useLanguage()
+
+  const tabs = [
+    { to: '/', label: t('navHome'), icon: Home, end: true },
+    { to: '/tarikh', label: t('navDates'), icon: CalendarClock, end: false },
+    { to: '/runcit', label: t('navGroceries'), icon: ShoppingCart, end: false },
+    { to: '/tugasan', label: t('navTasks'), icon: CheckSquare, end: false },
+  ]
+
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/85 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/85">
       <div className="mx-auto flex max-w-md items-stretch justify-between px-2">

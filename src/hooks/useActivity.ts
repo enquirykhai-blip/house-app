@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import type { Activity } from '../types'
+import type { Activity, ActivityType } from '../types'
 
 export function useActivity(max = 8) {
   const [activities, setActivities] = useState<Activity[]>([])
@@ -16,11 +16,12 @@ export function useActivity(max = 8) {
     return unsub
   }, [max])
 
-  async function logActivity(actorUid: string, actorName: string, action: string) {
+  async function logActivity(actorUid: string, actorName: string, type: ActivityType, detail: string) {
     await addDoc(collection(db, 'activity'), {
       actorUid,
       actorName,
-      action,
+      type,
+      detail,
       createdAt: Date.now(),
     })
   }

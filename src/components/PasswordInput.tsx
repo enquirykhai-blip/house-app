@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { inputClass } from './ui'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface PasswordInputProps {
   value: string
@@ -18,6 +19,7 @@ export function PasswordInput({
   minLength,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false)
+  const { t } = useLanguage()
 
   return (
     <div className="relative">
@@ -35,7 +37,7 @@ export function PasswordInput({
         type="button"
         onClick={() => setVisible((v) => !v)}
         className="press absolute inset-y-0 right-0 flex w-11 items-center justify-center text-neutral-400 dark:text-neutral-500"
-        aria-label={visible ? 'Sembunyi kata laluan' : 'Tunjuk kata laluan'}
+        aria-label={visible ? t('hidePassword') : t('showPassword')}
         tabIndex={-1}
       >
         {visible ? (

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Home } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { SplashScreen } from '../components/SplashScreen'
 import { PasswordInput } from '../components/PasswordInput'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
@@ -9,6 +10,7 @@ import type { Person } from '../types'
 
 export function Signup() {
   const { signup, signupOpen, config, configLoading } = useAuth()
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,7 +34,7 @@ export function Signup() {
     try {
       await signup(email, password, availableRole, name.trim())
     } catch {
-      setError('Gagal daftar. Cuba semak email / kata laluan (min. 6 aksara).')
+      setError(t('signupError'))
       setSubmitting(false)
     }
   }
@@ -44,39 +46,37 @@ export function Signup() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 dark:bg-white">
             <Home className="h-7 w-7 text-white dark:text-neutral-900" strokeWidth={1.75} />
           </div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Setup House App</h1>
+          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">{t('signupTitle')}</h1>
           <p className="mt-1 text-sm text-neutral-400">
-            {khaiTaken || wifeTaken
-              ? 'Satu akaun dah didaftar. Daftar akaun kedua.'
-              : 'Daftar akaun pertama untuk berdua.'}
+            {khaiTaken || wifeTaken ? t('signupSubtitleSecond') : t('signupSubtitleFirst')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!khaiTaken && !wifeTaken && (
             <div>
-              <label className={labelClass}>Akaun ini untuk siapa?</label>
+              <label className={labelClass}>{t('whoIsThis')}</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   className={segmentClass(role === 'khai')}
                   onClick={() => setRole('khai')}
                 >
-                  Khai
+                  {t('personKhai')}
                 </button>
                 <button
                   type="button"
                   className={segmentClass(role === 'wife')}
                   onClick={() => setRole('wife')}
                 >
-                  Wife
+                  {t('personWife')}
                 </button>
               </div>
             </div>
           )}
 
           <div>
-            <label className={labelClass}>Nama panggilan</label>
+            <label className={labelClass}>{t('nickname')}</label>
             <input
               type="text"
               required
@@ -84,11 +84,11 @@ export function Signup() {
               className={inputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="cth. Khai"
+              placeholder={t('nicknamePlaceholder')}
             />
           </div>
           <div>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>{t('email')}</label>
             <input
               type="email"
               required
@@ -96,17 +96,17 @@ export function Signup() {
               className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="awak@contoh.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
           <div>
-            <label className={labelClass}>Kata laluan</label>
+            <label className={labelClass}>{t('password')}</label>
             <PasswordInput
               value={password}
               onChange={setPassword}
               minLength={6}
               autoComplete="new-password"
-              placeholder="Sekurang-kurangnya 6 aksara"
+              placeholder={t('passwordHint')}
             />
           </div>
           {error && <p className="animate-fade-in-up text-sm text-danger">{error}</p>}
@@ -115,7 +115,7 @@ export function Signup() {
             disabled={submitting || !availableRole || !name.trim() || !email || password.length < 6}
             className={primaryButtonClass}
           >
-            {submitting ? 'Mendaftar...' : 'Daftar'}
+            {submitting ? t('signingUp') : t('signupButton')}
           </button>
         </form>
       </div>

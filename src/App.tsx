@@ -1,6 +1,7 @@
 import { Navigate, Route, HashRouter, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { LanguageProvider } from './contexts/LanguageContext'
 import { UndoProvider } from './contexts/UndoContext'
 import { BottomNav } from './components/BottomNav'
 import { SplashScreen } from './components/SplashScreen'
@@ -96,13 +97,15 @@ function Router() {
 function App() {
   return (
     <ThemeProvider>
-      <HashRouter>
-        <AuthProvider>
-          <UndoProvider>
-            <Router />
-          </UndoProvider>
-        </AuthProvider>
-      </HashRouter>
+      <LanguageProvider>
+        <HashRouter>
+          <AuthProvider>
+            <UndoProvider>
+              <Router />
+            </UndoProvider>
+          </AuthProvider>
+        </HashRouter>
+      </LanguageProvider>
     </ThemeProvider>
   )
 }
