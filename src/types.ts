@@ -49,6 +49,17 @@ export interface HouseholdConfig {
   favoriteGroceries?: FavoriteGrocery[]
 }
 
+export type MemoColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple'
+
+export interface Memo {
+  id: string
+  text: string
+  color: MemoColor
+  authorUid: string
+  authorName: string
+  createdAt: number
+}
+
 export type ActivityType =
   | 'date_added'
   | 'date_updated'
@@ -56,6 +67,7 @@ export type ActivityType =
   | 'grocery_bought'
   | 'task_added'
   | 'task_done'
+  | 'memo_added'
 
 export interface Activity {
   id: string

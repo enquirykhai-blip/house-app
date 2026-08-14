@@ -131,6 +131,16 @@ const ms = {
   undo: 'Undo',
   deletingLabel: 'Padam "{label}"',
 
+  // Memos
+  memosTitle: 'Nota Ringkas',
+  addMemo: 'Tambah nota',
+  memoPlaceholder: 'Tulis nota untuk pasangan anda...',
+  memoColor: 'Warna',
+  noMemosYet: 'Takde nota lagi, tinggalkan satu untuk pasangan anda',
+  deleteMemo: 'Padam nota',
+  post: 'Tampal',
+  posting: 'Menampal...',
+
   // Activity verbs
   activityAddedDate: 'tambah tarikh',
   activityUpdatedDate: 'kemaskini',
@@ -138,6 +148,7 @@ const ms = {
   activityBoughtItem: 'beli',
   activityAddedTask: 'tambah tugasan',
   activityCompletedTask: 'siapkan',
+  activityAddedMemo: 'tampal nota',
 
   // Relative time
   justNow: 'baru sahaja',
@@ -270,12 +281,22 @@ const en: Record<TranslationKey, string> = {
   undo: 'Undo',
   deletingLabel: 'Delete "{label}"',
 
+  memosTitle: 'Quick Notes',
+  addMemo: 'Add note',
+  memoPlaceholder: "Write a note for your partner...",
+  memoColor: 'Color',
+  noMemosYet: 'No notes yet, leave one for your partner',
+  deleteMemo: 'Delete note',
+  post: 'Post',
+  posting: 'Posting...',
+
   activityAddedDate: 'added a date',
   activityUpdatedDate: 'updated',
   activityAddedItem: 'added an item',
   activityBoughtItem: 'bought',
   activityAddedTask: 'added a task',
   activityCompletedTask: 'completed',
+  activityAddedMemo: 'posted a note',
 
   justNow: 'just now',
   secondsAgo: '{count}s ago',

@@ -19,6 +19,7 @@ import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
 import { Avatar } from '../components/Avatar'
 import { ProfileSheet } from '../components/ProfileSheet'
+import { MemoBoard } from '../components/MemoBoard'
 import { countdownLabel, dateBadgeClass, relativeTime } from '../utils/date'
 import type { ActivityType } from '../types'
 import type { TranslationKey } from '../i18n/translations'
@@ -30,6 +31,7 @@ const activityVerb: Record<ActivityType, TranslationKey> = {
   grocery_bought: 'activityBoughtItem',
   task_added: 'activityAddedTask',
   task_done: 'activityCompletedTask',
+  memo_added: 'activityAddedMemo',
 }
 
 export function Dashboard() {
@@ -127,6 +129,8 @@ export function Dashboard() {
       </header>
 
       <main className="animate-fade-in-up space-y-5 px-5 pt-1">
+        <MemoBoard />
+
         <section>
           <p className="mb-2 px-1 text-[13px] font-medium text-neutral-400">{t('quickAdd')}</p>
           <div className="grid grid-cols-3 gap-2">
