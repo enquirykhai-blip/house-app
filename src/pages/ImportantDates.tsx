@@ -138,10 +138,11 @@ export function ImportantDatesPage() {
                   <p className="truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
                     {d.title}
                   </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-neutral-400">
-                    <span>{formatDate(d.date, language)} ·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${categoryColor(d.category).dot}`} />
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
+                    <span>{formatDate(d.date, language)}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColor(d.category).soft}`}
+                    >
                       {d.category}
                     </span>
                     {d.repeat !== 'none' && <span>· {t(repeatKey[d.repeat])}</span>}
