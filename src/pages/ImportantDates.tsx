@@ -129,7 +129,9 @@ export function ImportantDatesPage() {
             style={{ animationDelay: `${Math.min(idx, 8) * 30}ms` }}
           >
             <SwipeToDelete onDelete={() => handleDelete(d)}>
-              <div className="flex items-center justify-between gap-2 border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+              <div
+                className={`flex items-center justify-between gap-2 border p-4 ${categoryColor(d.category).row}`}
+              >
                 <button
                   onClick={() => openForEdit(d)}
                   className="press min-w-0 flex-1 text-left"
@@ -138,13 +140,9 @@ export function ImportantDatesPage() {
                   <p className="truncate text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
                     {d.title}
                   </p>
-                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-neutral-400">
-                    <span>{formatDate(d.date, language)}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColor(d.category).soft}`}
-                    >
-                      {d.category}
-                    </span>
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                    <span>{formatDate(d.date, language)} ·</span>
+                    <span className={`font-semibold ${categoryColor(d.category).text}`}>{d.category}</span>
                     {d.repeat !== 'none' && <span>· {t(repeatKey[d.repeat])}</span>}
                   </p>
                   {d.notes && <p className="mt-1 truncate text-sm text-neutral-500">{d.notes}</p>}

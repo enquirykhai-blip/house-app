@@ -44,7 +44,7 @@ export function CategoryPicker({ categories, value, onChange, onAddCategory }: C
               key={c}
               type="button"
               className={`press rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors duration-150 ${
-                value === c ? color.active : color.soft
+                value === c ? color.active : color.chip
               }`}
               onClick={() => onChange(c)}
             >
