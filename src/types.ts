@@ -33,6 +33,7 @@ export interface Task {
   createdBy: string
   createdAt: number
   completedAt?: number
+  completedBy?: string | null
 }
 
 export interface FavoriteGrocery {
@@ -47,6 +48,7 @@ export interface HouseholdConfig {
   wifeUid: string
   dateCategories?: string[]
   favoriteGroceries?: FavoriteGrocery[]
+  points?: { khai: number; wife: number }
 }
 
 export type MemoColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple'

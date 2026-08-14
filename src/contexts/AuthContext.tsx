@@ -12,7 +12,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { arrayUnion, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
+import { arrayUnion, doc, increment, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { DEFAULT_DATE_CATEGORIES, type FavoriteGrocery, type HouseholdConfig } from '../types'
 
@@ -26,6 +26,7 @@ interface AuthContextValue {
   signupOpen: boolean
   dateCategories: string[]
   favoriteGroceries: FavoriteGrocery[]
+  points: { khai: number; wife: number }
   authError: string | null
   clearAuthError: () => void
   login: (email: string, password: string) => Promise<void>
@@ -39,6 +40,7 @@ interface AuthContextValue {
   addDateCategory: (name: string) => Promise<void>
   toggleFavoriteGrocery: (favorite: FavoriteGrocery) => Promise<void>
   updateDisplayName: (name: string) => Promise<void>
+  adjustPoint: (uid: string, delta: 1 | -1) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -147,6 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateDoc(ref, role === 'khai' ? { khaiName: trimmed } : { wifeName: trimmed })
   }
 
+  async function adjustPoint(uid: string, delta: 1 | -1) {
+    if (!config) return
+    const uidRole = uid === config.khaiUid ? 'khai' : uid === config.wifeUid ? 'wife' : null
+    if (!uidRole) return
+    const ref = doc(db, 'household', 'config')
+    await updateDoc(ref, { [`points.${uidRole}`]: increment(delta) })
+  }
+
   async function toggleFavoriteGrocery(favorite: FavoriteGrocery) {
     const ref = doc(db, 'household', 'config')
     const current = config?.favoriteGroceries ?? []
@@ -177,6 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const favoriteGroceries = config?.favoriteGroceries ?? []
 
+  const points = { khai: config?.points?.khai ?? 0, wife: config?.points?.wife ?? 0 }
+
   return (
     <AuthContext.Provider
       value={{
@@ -189,6 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupOpen,
         dateCategories,
         favoriteGroceries,
+        points,
         authError,
         clearAuthError,
         login,
@@ -197,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         addDateCategory,
         toggleFavoriteGrocery,
         updateDisplayName,
+        adjustPoint,
       }}
     >
       {children}

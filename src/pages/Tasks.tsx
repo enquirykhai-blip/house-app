@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react'
-import { CheckSquare, Plus } from 'lucide-react'
+import { useState, type FormEvent, type MouseEvent } from 'react'
+import { CheckSquare, Plus, Star } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
 import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
 import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
+import { PointBurst } from '../components/PointBurst'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
@@ -14,7 +15,7 @@ import { useTasks } from '../hooks/useTasks'
 import { useActivity } from '../hooks/useActivity'
 import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
-import { tick } from '../utils/haptics'
+import { celebrateTick, tick } from '../utils/haptics'
 import type { Person, Task } from '../types'
 import type { TranslationKey } from '../i18n/translations'
 
@@ -27,7 +28,7 @@ const personKey: Record<Person, TranslationKey> = {
 }
 
 export function TasksPage() {
-  const { user, displayName } = useAuth()
+  const { user, displayName, config, points, adjustPoint } = useAuth()
   const { t, language } = useLanguage()
   const { tasks, loading, refreshing, refresh, addTask, toggleDone, removeTask } = useTasks()
   const { logActivity } = useActivity()
@@ -38,8 +39,19 @@ export function TasksPage() {
   const [assignedTo, setAssignedTo] = useState<Person>('both')
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [burst, setBurst] = useState<{ id: number; x: number; y: number } | null>(null)
 
   useAutoOpenAdd(() => setOpen(true))
+
+  // Lifted out of TaskRow: completing a task moves it into the "done" list,
+  // a different <ul>, which unmounts/remounts the row the instant Firestore's
+  // snapshot comes back — often mid-animation. Owning the burst here, keyed
+  // to the tap coordinates instead of the row, keeps it playing to completion
+  // regardless of how fast the row relocates.
+  function celebrateAt(x: number, y: number) {
+    setBurst({ id: Date.now(), x, y })
+    window.setTimeout(() => setBurst(null), 700)
+  }
 
   const filtered = tasks
     .filter((t) => pendingDelete?.key !== `task-${t.id}`)
@@ -72,10 +84,17 @@ export function TasksPage() {
   }
 
   function handleToggle(t: Task, isDone: boolean) {
-    tick()
-    toggleDone(t.id, isDone)
-    if (isDone && displayName && user) {
-      logActivity(user.uid, displayName, 'task_done', t.title)
+    if (isDone) {
+      celebrateTick()
+      toggleDone(t.id, true, user?.uid ?? null)
+      if (displayName && user) {
+        logActivity(user.uid, displayName, 'task_done', t.title)
+        adjustPoint(user.uid, 1)
+      }
+    } else {
+      tick()
+      toggleDone(t.id, false, null)
+      if (t.completedBy) adjustPoint(t.completedBy, -1)
     }
   }
 
@@ -99,6 +118,13 @@ export function TasksPage() {
         </div>
       }
     >
+      {config && (
+        <div className="mb-4 flex gap-2" aria-label={t('rewardPoints')}>
+          <PointsChip name={config.khaiName || t('personKhai')} value={points.khai} />
+          <PointsChip name={config.wifeName || t('personWife')} value={points.wife} />
+        </div>
+      )}
+
       <div className="mb-4 flex gap-2">
         {(['all', 'khai', 'wife'] as const).map((f) => (
           <button key={f} className={segmentClass(filter === f)} onClick={() => setFilter(f)}>
@@ -116,7 +142,15 @@ export function TasksPage() {
       {notDone.length > 0 && (
         <ul className="space-y-2">
           {notDone.map((t, idx) => (
-            <TaskRow key={t.id} task={t} index={idx} lang={language} onToggle={handleToggle} onDelete={handleDelete} />
+            <TaskRow
+              key={t.id}
+              task={t}
+              index={idx}
+              lang={language}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onCelebrate={celebrateAt}
+            />
           ))}
         </ul>
       )}
@@ -126,9 +160,26 @@ export function TasksPage() {
           <p className="mb-2 text-sm font-medium text-neutral-400">{t('doneCount', { count: done.length })}</p>
           <ul className="space-y-2">
             {done.map((t, idx) => (
-              <TaskRow key={t.id} task={t} index={idx} lang={language} onToggle={handleToggle} onDelete={handleDelete} />
+              <TaskRow
+                key={t.id}
+                task={t}
+                index={idx}
+                lang={language}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onCelebrate={celebrateAt}
+              />
             ))}
           </ul>
+        </div>
+      )}
+
+      {burst && (
+        <div
+          className="pointer-events-none fixed z-50"
+          style={{ left: burst.x, top: burst.y, width: 0, height: 0 }}
+        >
+          <PointBurst key={burst.id} />
         </div>
       )}
 
@@ -179,28 +230,51 @@ export function TasksPage() {
   )
 }
 
+function PointsChip({ name, value }: { name: string; value: number }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white py-1.5 pl-1.5 pr-3 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-[11px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+        {name.trim().charAt(0).toUpperCase() || '?'}
+      </div>
+      <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{value}</span>
+      <Star className="h-3.5 w-3.5 fill-accent text-accent" strokeWidth={0} />
+    </div>
+  )
+}
+
 function TaskRow({
   task,
   index,
   lang,
   onToggle,
   onDelete,
+  onCelebrate,
 }: {
   task: Task
   index: number
   lang: 'ms' | 'en'
   onToggle: (task: Task, isDone: boolean) => void
   onDelete: (task: Task) => void
+  onCelebrate: (x: number, y: number) => void
 }) {
   const { t } = useLanguage()
   const overdue = !task.isDone && task.dueDate != null && daysUntil(task.dueDate) < 0
+
+  function handleCheckboxClick(e: MouseEvent<HTMLButtonElement>) {
+    const nextDone = !task.isDone
+    if (nextDone) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      onCelebrate(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    }
+    onToggle(task, nextDone)
+  }
 
   return (
     <li className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
       <SwipeToDelete onDelete={() => onDelete(task)}>
         <div className="flex items-center gap-3 border border-neutral-200 bg-white p-3.5 dark:border-neutral-800 dark:bg-neutral-900">
           <button
-            onClick={() => onToggle(task, !task.isDone)}
+            onClick={handleCheckboxClick}
             className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
               task.isDone ? 'border-accent bg-accent' : 'border-neutral-300 dark:border-neutral-600'
             }`}

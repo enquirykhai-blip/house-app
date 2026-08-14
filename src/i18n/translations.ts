@@ -125,6 +125,7 @@ const ms = {
   addTask: 'Tambah tugasan',
   markNotDone: 'Tanda belum siap',
   markDone: 'Tanda siap',
+  rewardPoints: 'Mata ganjaran',
 
   // Refresh / undo
   refresh: 'Muat semula',
@@ -276,6 +277,7 @@ const en: Record<TranslationKey, string> = {
   addTask: 'Add task',
   markNotDone: 'Mark as not done',
   markDone: 'Mark as done',
+  rewardPoints: 'Reward points',
 
   refresh: 'Refresh',
   undo: 'Undo',

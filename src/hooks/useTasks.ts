@@ -46,10 +46,11 @@ export function useTasks() {
     })
   }
 
-  async function toggleDone(id: string, isDone: boolean) {
+  async function toggleDone(id: string, isDone: boolean, completedBy: string | null) {
     await updateDoc(doc(db, 'tasks', id), {
       isDone,
       completedAt: isDone ? Date.now() : null,
+      completedBy,
     })
   }
 
