@@ -1,4 +1,4 @@
-import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom'
+import { Navigate, Route, HashRouter, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { BottomNav } from './components/BottomNav'
 import { SplashScreen } from './components/SplashScreen'
@@ -91,11 +91,11 @@ function Router() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <Router />
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
