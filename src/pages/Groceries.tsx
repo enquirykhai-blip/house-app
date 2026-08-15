@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type ClipboardEvent, type FormEvent } from 'react'
 import { Heart, Plus, ShoppingCart } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState'
 import { ListSkeleton } from '../components/Skeleton'
 import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
+import { BulkAddList } from '../components/BulkAddList'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
@@ -14,6 +15,7 @@ import { useGroceries } from '../hooks/useGroceries'
 import { useActivity } from '../hooks/useActivity'
 import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { tick } from '../utils/haptics'
+import { parseBulkLines } from '../utils/parseBulkLines'
 import type { GroceryItem } from '../types'
 import type { TranslationKey } from '../i18n/translations'
 
@@ -35,8 +37,47 @@ export function GroceriesPage() {
   const [category, setCategory] = useState<GroceryItem['category']>('dapur')
   const [quantity, setQuantity] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [bulkLines, setBulkLines] = useState<string[] | null>(null)
 
-  useAutoOpenAdd(() => setOpen(true))
+  function openForAdd() {
+    setItem('')
+    setQuantity('')
+    setCategory('dapur')
+    setBulkLines(null)
+    setOpen(true)
+  }
+
+  useAutoOpenAdd(openForAdd)
+
+  // Pasting a multi-line checklist (e.g. copied from Notes) into the item
+  // field lists each line as its own item instead of dumping it all into
+  // one item name.
+  function handleItemPaste(e: ClipboardEvent<HTMLInputElement>) {
+    const lines = parseBulkLines(e.clipboardData.getData('text'))
+    if (lines.length > 1) {
+      e.preventDefault()
+      setBulkLines(lines)
+    }
+  }
+
+  async function handleBulkConfirm() {
+    if (!user || !bulkLines || bulkLines.length === 0) return
+    setSubmitting(true)
+    try {
+      for (const line of bulkLines) {
+        await addItem({ item: line, category, addedBy: user.uid })
+        if (displayName) await logActivity(user.uid, displayName, 'grocery_added', line)
+      }
+      setBulkLines(null)
+      setOpen(false)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function removeBulkLine(index: number) {
+    setBulkLines((prev) => (prev ? prev.filter((_, i) => i !== index) : prev))
+  }
 
   // Hide the item immediately once its delete is scheduled; if Undo is
   // pressed, `pending` clears and it reappears since it was never actually
@@ -91,7 +132,7 @@ export function GroceriesPage() {
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} refreshing={refreshing} />
           <button
-            onClick={() => setOpen(true)}
+            onClick={openForAdd}
             className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
             aria-label={t('addGroceryItem')}
           >
@@ -162,46 +203,75 @@ export function GroceriesPage() {
       )}
 
       <Sheet open={open} onClose={() => setOpen(false)} title={t('addItemTitle')}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className={labelClass}>{t('fieldItemName')}</label>
-            <input
-              className={inputClass}
-              required
-              autoFocus
-              value={item}
-              onChange={(e) => setItem(e.target.value)}
-              placeholder={t('itemPlaceholder')}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>{t('fieldCategory')}</label>
-            <div className="flex gap-2">
-              {(['dapur', 'mandian', 'lain'] as const).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={segmentClass(category === c)}
-                  onClick={() => setCategory(c)}
-                >
-                  {t(categoryKey[c])}
-                </button>
-              ))}
+        {bulkLines ? (
+          <div className="space-y-4">
+            <div>
+              <label className={labelClass}>{t('fieldCategory')}</label>
+              <div className="flex gap-2">
+                {(['dapur', 'mandian', 'lain'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={segmentClass(category === c)}
+                    onClick={() => setCategory(c)}
+                  >
+                    {t(categoryKey[c])}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <label className={labelClass}>{t('fieldQuantity', { optional: t('optional') })}</label>
-            <input
-              className={inputClass}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder={t('quantityPlaceholder')}
+            <BulkAddList
+              lines={bulkLines}
+              onRemove={removeBulkLine}
+              onConfirm={handleBulkConfirm}
+              onCancel={() => setBulkLines(null)}
+              submitting={submitting}
+              confirmLabel={t('addAllCount', { count: bulkLines.length })}
             />
           </div>
-          <button type="submit" disabled={submitting || !item.trim()} className={primaryButtonClass}>
-            {submitting ? t('saving') : t('save')}
-          </button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className={labelClass}>{t('fieldItemName')}</label>
+              <input
+                className={inputClass}
+                required
+                autoFocus
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+                onPaste={handleItemPaste}
+                placeholder={t('itemPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{t('fieldCategory')}</label>
+              <div className="flex gap-2">
+                {(['dapur', 'mandian', 'lain'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={segmentClass(category === c)}
+                    onClick={() => setCategory(c)}
+                  >
+                    {t(categoryKey[c])}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>{t('fieldQuantity', { optional: t('optional') })}</label>
+              <input
+                className={inputClass}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder={t('quantityPlaceholder')}
+              />
+            </div>
+            <button type="submit" disabled={submitting || !item.trim()} className={primaryButtonClass}>
+              {submitting ? t('saving') : t('save')}
+            </button>
+          </form>
+        )}
       </Sheet>
     </Screen>
   )

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type MouseEvent } from 'react'
+import { useState, type ClipboardEvent, type FormEvent, type MouseEvent } from 'react'
 import { CheckSquare, Plus, Star } from 'lucide-react'
 import { Screen } from '../components/Screen'
 import { Sheet } from '../components/Sheet'
@@ -7,6 +7,7 @@ import { ListSkeleton } from '../components/Skeleton'
 import { RefreshButton } from '../components/RefreshButton'
 import { SwipeToDelete } from '../components/SwipeToDelete'
 import { PointBurst } from '../components/PointBurst'
+import { BulkAddList } from '../components/BulkAddList'
 import { inputClass, labelClass, primaryButtonClass, segmentClass } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useUndo } from '../contexts/UndoContext'
@@ -16,6 +17,7 @@ import { useActivity } from '../hooks/useActivity'
 import { useAutoOpenAdd } from '../hooks/useAutoOpenAdd'
 import { daysUntil, formatDate, fromDateInputValue, toDateInputValue } from '../utils/date'
 import { celebrateTick, tick } from '../utils/haptics'
+import { parseBulkLines } from '../utils/parseBulkLines'
 import type { Person, Task } from '../types'
 import type { TranslationKey } from '../i18n/translations'
 
@@ -41,12 +43,14 @@ export function TasksPage() {
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [burst, setBurst] = useState<{ id: number; x: number; y: number } | null>(null)
+  const [bulkLines, setBulkLines] = useState<string[] | null>(null)
 
   function openForAdd() {
     setEditingId(null)
     setTitle('')
     setAssignedTo('both')
     setDueDate('')
+    setBulkLines(null)
     setOpen(true)
   }
 
@@ -57,7 +61,39 @@ export function TasksPage() {
     setTitle(t.title)
     setAssignedTo(t.assignedTo)
     setDueDate(t.dueDate ? toDateInputValue(t.dueDate) : '')
+    setBulkLines(null)
     setOpen(true)
+  }
+
+  // Pasting a multi-line checklist (e.g. copied from Notes) into the title
+  // field lists each line as its own task instead of dumping it all into
+  // one title.
+  function handleTitlePaste(e: ClipboardEvent<HTMLInputElement>) {
+    if (editingId) return
+    const lines = parseBulkLines(e.clipboardData.getData('text'))
+    if (lines.length > 1) {
+      e.preventDefault()
+      setBulkLines(lines)
+    }
+  }
+
+  async function handleBulkConfirm() {
+    if (!user || !bulkLines || bulkLines.length === 0) return
+    setSubmitting(true)
+    try {
+      for (const line of bulkLines) {
+        await addTask({ title: line, assignedTo, createdBy: user.uid })
+        if (displayName) await logActivity(user.uid, displayName, 'task_added', line)
+      }
+      setBulkLines(null)
+      setOpen(false)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function removeBulkLine(index: number) {
+    setBulkLines((prev) => (prev ? prev.filter((_, i) => i !== index) : prev))
   }
 
   // Lifted out of TaskRow: completing a task moves it into the "done" list,
@@ -204,47 +240,76 @@ export function TasksPage() {
       )}
 
       <Sheet open={open} onClose={() => setOpen(false)} title={editingId ? t('editTaskTitle') : t('addTaskTitle')}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className={labelClass}>{t('fieldTitle')}</label>
-            <input
-              className={inputClass}
-              required
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('taskPlaceholder')}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>{t('assignedTo')}</label>
-            <div className="flex gap-2">
-              {(['khai', 'wife', 'both'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className={segmentClass(assignedTo === p)}
-                  onClick={() => setAssignedTo(p)}
-                >
-                  {t(personKey[p])}
-                </button>
-              ))}
+        {bulkLines ? (
+          <div className="space-y-4">
+            <div>
+              <label className={labelClass}>{t('assignedTo')}</label>
+              <div className="flex gap-2">
+                {(['khai', 'wife', 'both'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={segmentClass(assignedTo === p)}
+                    onClick={() => setAssignedTo(p)}
+                  >
+                    {t(personKey[p])}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <label className={labelClass}>{t('fieldDueDate', { optional: t('optional') })}</label>
-            <input
-              type="date"
-              className={inputClass}
-              value={dueDate}
-              min={toDateInputValue(Date.now())}
-              onChange={(e) => setDueDate(e.target.value)}
+            <BulkAddList
+              lines={bulkLines}
+              onRemove={removeBulkLine}
+              onConfirm={handleBulkConfirm}
+              onCancel={() => setBulkLines(null)}
+              submitting={submitting}
+              confirmLabel={t('addAllCount', { count: bulkLines.length })}
             />
           </div>
-          <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
-            {submitting ? t('saving') : editingId ? t('update') : t('save')}
-          </button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className={labelClass}>{t('fieldTitle')}</label>
+              <input
+                className={inputClass}
+                required
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onPaste={handleTitlePaste}
+                placeholder={t('taskPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{t('assignedTo')}</label>
+              <div className="flex gap-2">
+                {(['khai', 'wife', 'both'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={segmentClass(assignedTo === p)}
+                    onClick={() => setAssignedTo(p)}
+                  >
+                    {t(personKey[p])}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>{t('fieldDueDate', { optional: t('optional') })}</label>
+              <input
+                type="date"
+                className={inputClass}
+                value={dueDate}
+                min={toDateInputValue(Date.now())}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+            <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
+              {submitting ? t('saving') : editingId ? t('update') : t('save')}
+            </button>
+          </form>
+        )}
       </Sheet>
     </Screen>
   )

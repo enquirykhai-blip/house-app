@@ -8,6 +8,8 @@ const ms = {
   delete: 'Padam',
   edit: 'Edit',
   optional: 'opsyenal',
+  bulkItemsDetected: '{count} item dikesan daripada tampalan',
+  addAllCount: 'Tambah semua ({count})',
 
   // Bottom nav
   navHome: 'Home',
@@ -181,6 +183,8 @@ const en: Record<TranslationKey, string> = {
   delete: 'Delete',
   edit: 'Edit',
   optional: 'optional',
+  bulkItemsDetected: '{count} items detected from paste',
+  addAllCount: 'Add all ({count})',
 
   navHome: 'Home',
   navDates: 'Dates',
