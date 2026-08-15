@@ -61,10 +61,12 @@ export function GroceriesPage() {
   }
 
   async function handleBulkConfirm() {
-    if (!user || !bulkLines || bulkLines.length === 0) return
+    if (!user || !bulkLines) return
+    const finalLines = bulkLines.map((l) => l.trim()).filter((l) => l.length > 0)
+    if (finalLines.length === 0) return
     setSubmitting(true)
     try {
-      for (const line of bulkLines) {
+      for (const line of finalLines) {
         await addItem({ item: line, category, addedBy: user.uid })
         if (displayName) await logActivity(user.uid, displayName, 'grocery_added', line)
       }
@@ -73,6 +75,10 @@ export function GroceriesPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function editBulkLine(index: number, value: string) {
+    setBulkLines((prev) => (prev ? prev.map((l, i) => (i === index ? value : l)) : prev))
   }
 
   function removeBulkLine(index: number) {
@@ -222,11 +228,14 @@ export function GroceriesPage() {
             </div>
             <BulkAddList
               lines={bulkLines}
+              onEdit={editBulkLine}
               onRemove={removeBulkLine}
               onConfirm={handleBulkConfirm}
               onCancel={() => setBulkLines(null)}
               submitting={submitting}
-              confirmLabel={t('addAllCount', { count: bulkLines.length })}
+              confirmLabel={t('addAllCount', {
+                count: bulkLines.filter((l) => l.trim().length > 0).length,
+              })}
             />
           </div>
         ) : (

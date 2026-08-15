@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 
 interface BulkAddListProps {
   lines: string[]
+  onEdit: (index: number, value: string) => void
   onRemove: (index: number) => void
   onConfirm: () => void
   onCancel: () => void
@@ -11,8 +12,17 @@ interface BulkAddListProps {
 }
 
 /** Editable preview of lines parsed from a multi-line paste, shown instead of the normal single-item form. */
-export function BulkAddList({ lines, onRemove, onConfirm, onCancel, submitting, confirmLabel }: BulkAddListProps) {
+export function BulkAddList({
+  lines,
+  onEdit,
+  onRemove,
+  onConfirm,
+  onCancel,
+  submitting,
+  confirmLabel,
+}: BulkAddListProps) {
   const { t } = useLanguage()
+  const validCount = lines.filter((line) => line.trim().length > 0).length
 
   return (
     <div className="space-y-3">
@@ -23,12 +33,14 @@ export function BulkAddList({ lines, onRemove, onConfirm, onCancel, submitting, 
         {lines.map((line, i) => (
           <li
             key={i}
-            className="animate-fade-in-up flex items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-700 dark:bg-neutral-800"
+            className="animate-fade-in-up flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1 dark:border-neutral-700 dark:bg-neutral-800"
             style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
           >
-            <span className="min-w-0 flex-1 truncate text-[14px] text-neutral-800 dark:text-neutral-100">
-              {line}
-            </span>
+            <input
+              value={line}
+              onChange={(e) => onEdit(i, e.target.value)}
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] text-neutral-800 outline-none dark:text-neutral-100"
+            />
             <button
               type="button"
               onClick={() => onRemove(i)}
@@ -50,7 +62,7 @@ export function BulkAddList({ lines, onRemove, onConfirm, onCancel, submitting, 
         </button>
         <button
           type="button"
-          disabled={submitting || lines.length === 0}
+          disabled={submitting || validCount === 0}
           onClick={onConfirm}
           className="press flex-[2] rounded-xl bg-neutral-900 px-4 py-3.5 text-[14px] font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
         >
