@@ -63,11 +63,17 @@ export function fromDateInputValue(value: string): number {
   return new Date(y, m - 1, d).getTime()
 }
 
-/** Tailwind classes for a countdown badge: red if overdue, accent if due soon. */
+/**
+ * Tailwind classes for a countdown badge. Bold solid fills (not soft
+ * tints) for anything urgent, so it reads at a glance against a
+ * category-tinted card — overdue and "today" also get a gentle pulse to
+ * pull the eye.
+ */
 export function dateBadgeClass(dateMs: number): string {
   const diff = daysUntil(dateMs)
-  if (diff < 0) return 'bg-danger-soft text-danger dark:bg-danger/15'
-  if (diff <= 3) return 'bg-accent-soft text-accent dark:bg-accent/15'
+  if (diff < 0) return 'animate-pulse bg-danger text-white shadow-sm shadow-danger/40'
+  if (diff === 0) return 'animate-pulse bg-accent text-white shadow-sm shadow-accent/40'
+  if (diff <= 3) return 'bg-accent text-white shadow-sm shadow-accent/40'
   return 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
 }
 

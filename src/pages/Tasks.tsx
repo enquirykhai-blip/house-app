@@ -30,18 +30,35 @@ const personKey: Record<Person, TranslationKey> = {
 export function TasksPage() {
   const { user, displayName, config, points, adjustPoint } = useAuth()
   const { t, language } = useLanguage()
-  const { tasks, loading, refreshing, refresh, addTask, toggleDone, removeTask } = useTasks()
+  const { tasks, loading, refreshing, refresh, addTask, updateTask, toggleDone, removeTask } = useTasks()
   const { logActivity } = useActivity()
   const { pending: pendingDelete, requestDelete } = useUndo()
   const [filter, setFilter] = useState<Filter>('all')
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [assignedTo, setAssignedTo] = useState<Person>('both')
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [burst, setBurst] = useState<{ id: number; x: number; y: number } | null>(null)
 
-  useAutoOpenAdd(() => setOpen(true))
+  function openForAdd() {
+    setEditingId(null)
+    setTitle('')
+    setAssignedTo('both')
+    setDueDate('')
+    setOpen(true)
+  }
+
+  useAutoOpenAdd(openForAdd)
+
+  function openForEdit(t: Task) {
+    setEditingId(t.id)
+    setTitle(t.title)
+    setAssignedTo(t.assignedTo)
+    setDueDate(t.dueDate ? toDateInputValue(t.dueDate) : '')
+    setOpen(true)
+  }
 
   // Lifted out of TaskRow: completing a task moves it into the "done" list,
   // a different <ul>, which unmounts/remounts the row the instant Firestore's
@@ -67,16 +84,17 @@ export function TasksPage() {
     if (!user) return
     setSubmitting(true)
     try {
-      await addTask({
+      const payload = {
         title: title.trim(),
         assignedTo,
         dueDate: dueDate ? fromDateInputValue(dueDate) : undefined,
-        createdBy: user.uid,
-      })
-      if (displayName) await logActivity(user.uid, displayName, 'task_added', title.trim())
-      setTitle('')
-      setAssignedTo('both')
-      setDueDate('')
+      }
+      if (editingId) {
+        await updateTask(editingId, payload)
+      } else {
+        await addTask({ ...payload, createdBy: user.uid })
+        if (displayName) await logActivity(user.uid, displayName, 'task_added', payload.title)
+      }
       setOpen(false)
     } finally {
       setSubmitting(false)
@@ -109,7 +127,7 @@ export function TasksPage() {
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} refreshing={refreshing} />
           <button
-            onClick={() => setOpen(true)}
+            onClick={openForAdd}
             className="press flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm shadow-neutral-900/20 dark:bg-white dark:text-neutral-900"
             aria-label={t('addTask')}
           >
@@ -150,6 +168,7 @@ export function TasksPage() {
               onToggle={handleToggle}
               onDelete={handleDelete}
               onCelebrate={celebrateAt}
+              onEdit={openForEdit}
             />
           ))}
         </ul>
@@ -168,6 +187,7 @@ export function TasksPage() {
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onCelebrate={celebrateAt}
+                onEdit={openForEdit}
               />
             ))}
           </ul>
@@ -183,7 +203,7 @@ export function TasksPage() {
         </div>
       )}
 
-      <Sheet open={open} onClose={() => setOpen(false)} title={t('addTaskTitle')}>
+      <Sheet open={open} onClose={() => setOpen(false)} title={editingId ? t('editTaskTitle') : t('addTaskTitle')}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={labelClass}>{t('fieldTitle')}</label>
@@ -222,7 +242,7 @@ export function TasksPage() {
             />
           </div>
           <button type="submit" disabled={submitting || !title.trim()} className={primaryButtonClass}>
-            {submitting ? t('saving') : t('save')}
+            {submitting ? t('saving') : editingId ? t('update') : t('save')}
           </button>
         </form>
       </Sheet>
@@ -249,6 +269,7 @@ function TaskRow({
   onToggle,
   onDelete,
   onCelebrate,
+  onEdit,
 }: {
   task: Task
   index: number
@@ -256,6 +277,7 @@ function TaskRow({
   onToggle: (task: Task, isDone: boolean) => void
   onDelete: (task: Task) => void
   onCelebrate: (x: number, y: number) => void
+  onEdit: (task: Task) => void
 }) {
   const { t } = useLanguage()
   const overdue = !task.isDone && task.dueDate != null && daysUntil(task.dueDate) < 0
@@ -282,7 +304,11 @@ function TaskRow({
           >
             {task.isDone && <div className="animate-pop h-2 w-2 rounded-full bg-white" />}
           </button>
-          <div className="min-w-0 flex-1">
+          <button
+            onClick={() => onEdit(task)}
+            className="press min-w-0 flex-1 text-left"
+            aria-label={`${t('edit')} ${task.title}`}
+          >
             <p
               className={`truncate text-[15px] font-medium transition-colors ${
                 task.isDone ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-neutral-50'
@@ -294,7 +320,7 @@ function TaskRow({
               {t(personKey[task.assignedTo])}
               {task.dueDate && ` · ${formatDate(task.dueDate, lang)}`}
             </p>
-          </div>
+          </button>
         </div>
       </SwipeToDelete>
     </li>

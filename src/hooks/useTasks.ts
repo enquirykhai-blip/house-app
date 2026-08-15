@@ -46,6 +46,17 @@ export function useTasks() {
     })
   }
 
+  async function updateTask(
+    id: string,
+    input: { title: string; assignedTo: Person; dueDate?: number },
+  ) {
+    await updateDoc(doc(db, 'tasks', id), {
+      title: input.title,
+      assignedTo: input.assignedTo,
+      dueDate: input.dueDate ?? null,
+    })
+  }
+
   async function toggleDone(id: string, isDone: boolean, completedBy: string | null) {
     await updateDoc(doc(db, 'tasks', id), {
       isDone,
@@ -69,5 +80,5 @@ export function useTasks() {
     }
   }
 
-  return { tasks, loading, refreshing, refresh, addTask, toggleDone, removeTask }
+  return { tasks, loading, refreshing, refresh, addTask, updateTask, toggleDone, removeTask }
 }
