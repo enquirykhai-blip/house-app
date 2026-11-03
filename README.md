@@ -87,15 +87,18 @@ account ever does end up signed in without matching `khaiUid`/`wifeUid`,
 the app signs it out automatically with an explanation rather than leaving
 it stuck looking at empty lists.
 
-### 4. Deploy hosting (optional)
+### 4. Deploy hosting (Vercel)
 
-```bash
-npm run build
-firebase deploy --only hosting --project <your-project-id>
-```
+1. On [vercel.com](https://vercel.com) → **Add New → Project** → import this
+   GitHub repo. Vercel detects Vite automatically (see `vercel.json`).
+2. The Firebase config is read from `.env.production` at build time, so no
+   extra environment variables are needed (you can also set the `VITE_FIREBASE_*`
+   vars in Vercel → Settings → Environment Variables instead).
+3. After the first deploy, add the Vercel domain (e.g. `your-app.vercel.app`)
+   in Firebase console → Authentication → Settings → **Authorized domains**,
+   otherwise login will fail.
 
-Or skip this and just run `npm run dev` on your own devices — hosting isn't
-required for the app to work for just the two of you.
+Every push to `main` redeploys automatically.
 
 ### 5. Testing changes locally without touching prod data
 
